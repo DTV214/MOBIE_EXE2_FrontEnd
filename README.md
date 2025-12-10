@@ -178,7 +178,7 @@ src/
 
 ## 📞 Liên Hệ Dev Team
 
-  * **Frontend Lead:** [Tên Của Bạn]
-  * **Backend Support:** [Link đến Backend Repo]
+  * **Frontend Lead:** [Danh-Võ]
+ 
 
 Happy Coding\! 🚀
