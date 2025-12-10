@@ -1,97 +1,184 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+Dưới đây là file `README.md` chuyên nghiệp dành cho Frontend Mobile App của bạn. Nó được thiết kế đồng bộ với phong cách của Backend, giải thích rõ ràng về Clean Architecture, các thư viện sử dụng (`twrnc`, `zustand`...) và cách vận hành dự án.
 
-# Getting Started
+Bạn hãy tạo một file tên là **`README.md`** trong thư mục gốc `HealthApp` và dán nội dung này vào nhé.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+-----
 
-## Step 1: Start Metro
+# 📱 LanhCare - Mobile Health App
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Ứng dụng di động theo dõi sức khỏe và wellness, được xây dựng bằng **React Native** tuân thủ kiến trúc **Clean Architecture**.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+[](https://reactnative.dev/)
+[](https://www.typescriptlang.org/)
+[](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
-```sh
-# Using npm
-npm start
+-----
 
-# OR using Yarn
-yarn start
+## 🚀 ✨ START HERE - Bắt Đầu Nhanh\!
+
+Mọi thứ bạn cần để chạy ứng dụng trên máy ảo (Emulator) hoặc thiết bị thật.
+
+### 🛠️ Yêu cầu môi trường (Prerequisites)
+
+  * **Node.js**: Phiên bản 18+ (Khuyên dùng LTS)
+  * **JDK**: Java Development Kit 17 (Cho Android build)
+  * **Android Studio**: Đã cài đặt SDK và Máy ảo (Emulator)
+  * **CocoaPods**: (Chỉ dành cho MacOS/iOS)
+
+### 🏃‍♂️ Khởi động trong 3 bước
+
+1.  **Cài đặt thư viện (Dependencies):**
+
+    ```bash
+    npm install
+    # Nếu dùng MacOS:
+    # cd ios && pod install && cd ..
+    ```
+
+2.  **Khởi động Metro Bundler (Server Javascript):**
+
+    ```bash
+    npx react-native start --reset-cache
+    ```
+
+3.  **Chạy ứng dụng (Trên Terminal mới):**
+
+      * **Android:**
+        ```bash
+        npx react-native run-android
+        ```
+      * **iOS:**
+        ```bash
+        npx react-native run-ios
+        ```
+
+-----
+
+## 🏗️ Kiến Trúc & Cấu Trúc Source Code
+
+Dự án áp dụng **Clean Architecture** để tách biệt giao diện (UI) khỏi nghiệp vụ (Logic) và dữ liệu (Data).
+
+### 📂 Cấu Trúc Thư Mục (`src/`)
+
+```
+src/
+├── 🟢 domain/              # LỚP NGHIỆP VỤ (Quan trọng nhất, không phụ thuộc Framework)
+│   ├── entities/           # Định nghĩa các đối tượng (User, HealthRecord...)
+│   ├── repositories/       # Interfaces (Hợp đồng) cho việc lấy dữ liệu
+│   └── usecases/           # Logic nghiệp vụ thuần túy (GetUserProfile, SaveMeal...)
+│
+├── 🟡 data/                # LỚP DỮ LIỆU (Triển khai các Interfaces)
+│   ├── apis/               # Cấu hình gọi API (Axios)
+│   ├── models/             # DTOs (Data Transfer Objects) từ Server
+│   └── repositories/       # Code thực thi gọi API hoặc Mock Data
+│
+├── 🔵 presentation/        # LỚP GIAO DIỆN (React Native code)
+│   ├── components/         # Các UI nhỏ tái sử dụng (Button, Card...)
+│   ├── screens/            # Các màn hình chính (Home, Profile, Dashboard...)
+│   ├── navigation/         # Cấu hình điều hướng (Stack, Tab)
+│   └── viewmodels/         # Quản lý State màn hình (Zustand Stores)
+│
+├── ⚫ di/                  # Dependency Injection (Nơi kết nối các lớp lại với nhau)
+└── ⚪ utils/               # Các hàm tiện ích (Format date, Tailwind config...)
 ```
 
-## Step 2: Build and run your app
+### 🔄 Luồng dữ liệu (Data Flow)
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+1.  **UI (Screen)** gọi **ViewModel (Store)**.
+2.  **ViewModel** gọi **Use Case**.
+3.  **Use Case** gọi **Repository Interface**.
+4.  **Repository Impl** (Data Layer) lấy dữ liệu từ **API/Mock**.
 
-### Android
+-----
 
-```sh
-# Using npm
-npm run android
+## 🛠️ Tech Stack (Công Nghệ Sử Dụng)
 
-# OR using Yarn
-yarn android
-```
+### Core
 
-### iOS
+  * **Framework:** React Native (0.76+)
+  * **Language:** TypeScript (Strict mode)
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+### UI & Styling (Giao diện)
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+  * **Styling:** `twrnc` (Tailwind CSS for React Native) - *Viết style class nhanh, không cần config Babel.*
+  * **Icons:** `lucide-react-native` - *Bộ icon hiện đại, nét mảnh.*
+  * **Gradient:** `react-native-linear-gradient` - *Hiệu ứng chuyển màu nút bấm/thẻ.*
+  * **Charts:** `react-native-gifted-charts` - *Biểu đồ sức khỏe (Nhịp tim, Calo).*
+  * **Toast:** `react-native-toast-message` - *Thông báo nổi.*
 
-```sh
-bundle install
-```
+### State Management & Logic
 
-Then, and every time you update your native dependencies, run:
+  * **State:** `zustand` - *Quản lý trạng thái nhẹ nhàng, thay thế Redux.*
+  * **Navigation:** `react-native-navigation` (Native Stack).
+  * **Forms:** `react-hook-form` (Quản lý form đăng ký/đăng nhập).
 
-```sh
-bundle exec pod install
-```
+### Architecture Pattern
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+  * **Clean Architecture** (Domain - Data - Presentation).
+  * **Dependency Injection (DI)** thủ công.
+  * **Repository Pattern**.
 
-```sh
-# Using npm
-npm run ios
+-----
 
-# OR using Yarn
-yarn ios
-```
+## 🎯 Tính Năng & Màn Hình (Frontend)
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+✅ **Đã Hoàn Thành (UI & Mock Data)**
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+  * **Onboarding:** Giới thiệu ứng dụng.
+  * **Dashboard:**
+      * Hiển thị biểu đồ nhịp tim, giấc ngủ.
+      * Thẻ trạng thái (Steps, Calories) với icon Lucide.
+      * Gradient Buttons & Cards.
+  * **Profile:** Xem thông tin cá nhân (Mock Data).
 
-## Step 3: Modify your app
+🚧 **Đang Phát Triển**
 
-Now that you have successfully run the app, let's make changes!
+  * **Meal Tracking:** Chọn món ăn, tính Calo tự động.
+  * **AI Chat:** Giao diện chat với bác sĩ ảo.
+  * **Payment:** Màn hình chọn gói dịch vụ & thanh toán.
+  * **Authentication:** Đăng nhập/Đăng ký (Kết nối API thật).
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+-----
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 🔧 Scripts Tiện Ích
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+| Lệnh (Command) | Mô tả |
+| :--- | :--- |
+| `npm start` | Khởi chạy Metro Bundler |
+| `npm run android` | Build và chạy trên Android Emulator |
+| `npm run ios` | Build và chạy trên iOS Simulator |
+| `npm start -- --reset-cache` | **Quan trọng:** Xóa cache khi gặp lỗi lạ hoặc đổi thư viện |
+| `cd android && ./gradlew clean` | Dọn dẹp file build Android (Fix lỗi build fail) |
 
-## Congratulations! :tada:
+-----
 
-You've successfully run and modified your React Native App. :partying_face:
+## ❓ Troubleshooting (Gỡ Lỗi Thường Gặp)
 
-### Now what?
+**1. Lỗi "No online devices found"**
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+  * *Nguyên nhân:* Máy ảo chưa bật hoặc bị treo.
+  * *Khắc phục:* Mở Android Studio -\> Device Manager -\> Bấm nút Play ▶️ để bật máy ảo **trước khi** chạy lệnh `run-android`.
 
-# Troubleshooting
+**2. Lỗi "Requested internal only, but not enough space"**
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+  * *Nguyên nhân:* Máy ảo hết bộ nhớ trong.
+  * *Khắc phục:* Vào Device Manager -\> Edit -\> Show Advanced Settings -\> Tăng **Internal Storage** lên `8192 MB` (8GB).
 
-# Learn More
+**3. Màn hình trắng trơn sau khi build thành công**
 
-To learn more about React Native, take a look at the following resources:
+  * *Nguyên nhân:* Metro Bundler chưa chạy hoặc chưa kết nối.
+  * *Khắc phục:* Mở terminal chạy `npx react-native start`. Sau đó vào máy ảo nhấn phím `R` hai lần để reload.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+**4. Lỗi Icon hoặc SVG không hiện (Crash app)**
+
+  * *Nguyên nhân:* Chưa link native code của `react-native-svg`.
+  * *Khắc phục:* Tắt Metro, chạy `cd android && ./gradlew clean`, sau đó chạy lại `npx react-native run-android`.
+
+-----
+
+## 📞 Liên Hệ Dev Team
+
+  * **Frontend Lead:** [Tên Của Bạn]
+  * **Backend Support:** [Link đến Backend Repo]
+
+Happy Coding\! 🚀
