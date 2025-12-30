@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native'; // Import useNavigation
+import { Settings as SettingsIcon } from 'lucide-react-native'; // Import icon Settings
 
-import { useUserStore } from '../viewmodels/useUserStore';
-import tw from '../../utils/tailwind';
-
+import { useUserStore } from '../../viewmodels/useUserStore';
+import tw from '../../../utils/tailwind';
 
 const ProfileScreen = () => {
   const { user, loading, fetchUser } = useUserStore();
+  const navigation = useNavigation<any>(); // Khởi tạo navigation
 
   useEffect(() => {
-    fetchUser('user_001');
+    fetchUser('user_001'); // Đang dùng ID cứng user_001 như trong code của bạn
   }, [fetchUser]);
 
   if (loading) {
@@ -23,9 +25,17 @@ const ProfileScreen = () => {
 
   return (
     <View style={tw`flex-1 bg-gray-50 p-5`}>
-      <Text style={tw`text-2xl font-bold text-gray-900 mb-6 mt-10`}>
-        Hồ Sơ Sức Khỏe
-      </Text>
+      {/* Header Profile có chứa tiêu đề và nút Settings */}
+      <View style={tw`flex-row justify-between items-center mb-6 mt-10`}>
+        <Text style={tw`text-2xl font-bold text-gray-900`}>Hồ Sơ Sức Khỏe</Text>
+        {/* Nút Settings mới thêm vào */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')} // Chuyển sang màn hình Settings
+          style={tw`p-2 bg-white rounded-xl shadow-sm border border-gray-100`}
+        >
+          <SettingsIcon size={24} color="#1F2937" />
+        </TouchableOpacity>
+      </View>
 
       {user ? (
         <View
@@ -38,12 +48,15 @@ const ProfileScreen = () => {
             style={tw`mt-4 bg-green-50 p-4 rounded-xl border border-green-100`}
           >
             <Text style={tw`text-center text-green-700 font-bold text-lg`}>
+              {/* Lưu ý: Đảm bảo User entity của bạn có thuộc tính bmi */}
               BMI: {user.bmi}
             </Text>
           </View>
         </View>
       ) : (
-        <Text>Không có dữ liệu</Text>
+        <View style={tw`items-center mt-10`}>
+          <Text style={tw`text-gray-500`}>Không có dữ liệu người dùng</Text>
+        </View>
       )}
     </View>
   );
