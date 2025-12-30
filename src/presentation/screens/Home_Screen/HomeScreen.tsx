@@ -18,7 +18,7 @@ const HomeScreen = () => {
 
       <TouchableOpacity
         style={tw`bg-green-500 px-6 py-3 rounded-full`}
-        onPress={() => navigation.navigate('Dashboard')} // Đảm bảo tên route đúng
+        onPress={() => navigation.navigate('Main')} // Chuyển đến 'Main' để thấy Bottom Tabs
       >
         <Text style={tw`text-white font-bold`}>Vào Dashboard</Text>
       </TouchableOpacity>

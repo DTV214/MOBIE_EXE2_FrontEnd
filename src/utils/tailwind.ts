@@ -1,14 +1,18 @@
+// src/utils/tailwind.ts
 import { create } from 'twrnc';
-// Bạn có thể thêm custom colors từ Figma vào đây
+
 const tw = create({
   theme: {
     extend: {
       colors: {
-        primary: '#4ADE80', // Màu xanh lá chủ đạo trong Figma
-        secondary: '#22C55E',
-        dark: '#1F2937',
+        primary: '#22C55E', // Xanh lá đậm (Secondary trong file cũ)
+        primaryLight: '#DCFCE7', // Xanh lá nhạt cho nền thẻ
+        brandDark: '#111827', // Màu đen cho banner AI
         card: '#FFFFFF',
         background: '#F3F4F6',
+        textMain: '#111827',
+        textSub: '#6B7280',
+        softGray: '#F9FAFB', // Màu nền app
       },
     },
   },
