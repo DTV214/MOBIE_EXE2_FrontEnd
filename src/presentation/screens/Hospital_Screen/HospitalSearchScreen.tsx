@@ -1,146 +1,351 @@
-import React from 'react';
+// src/presentation/screens/Hospital_Screen/HospitalSearchScreen.tsx
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TextInput,
   TouchableOpacity,
-
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import {
   Search,
   MapPin,
   Star,
-
   Filter,
   ChevronRight,
+  MoreVertical,
+  Navigation,
+  Hospital,
+  Building2,
+  Dumbbell,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import {
+  searchFacilitiesUseCase,
+  suggestFacilitiesBySymptomsUseCase,
+} from '../../../di/Container';
+import { Facility, FacilityType } from '../../../domain/entities/Hospital';
 
 const HospitalSearchScreen = () => {
   const navigation = useNavigation<any>();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [selectedType, setSelectedType] = useState<FacilityType | 'all'>('all');
+  const [loading, setLoading] = useState(false);
+  const [isSymptomSearch, setIsSymptomSearch] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      handleSearch();
+    } else {
+      setFacilities([]);
+    }
+  }, [searchQuery, selectedType]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    setIsSymptomSearch(false);
+
+    try {
+      // Check if it looks like symptoms (contains common symptom keywords)
+      const symptomKeywords = ['đau', 'mệt', 'sốt', 'ho', 'chóng mặt', 'buồn nôn'];
+      const isSymptom = symptomKeywords.some(keyword =>
+        searchQuery.toLowerCase().includes(keyword),
+      );
+
+      if (isSymptom && selectedType !== 'gym') {
+        // Use AI-based symptom suggestion
+        const symptoms = searchQuery.split(',').map(s => s.trim());
+        const suggestion = await suggestFacilitiesBySymptomsUseCase.execute(symptoms);
+        setFacilities(suggestion.suggestedFacilities);
+        setIsSymptomSearch(true);
+      } else {
+        // Regular search
+        const type = selectedType === 'all' ? undefined : selectedType;
+        const results = await searchFacilitiesUseCase.execute(searchQuery, type);
+        setFacilities(results);
+      }
+    } catch (error) {
+      console.error('Error searching facilities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTypeLabel = (type: FacilityType | 'all') => {
+    switch (type) {
+      case 'clinic':
+        return 'Phòng khám';
+      case 'hospital':
+        return 'Bệnh viện';
+      case 'gym':
+        return 'Phòng gym';
+      default:
+        return 'Tất cả';
+    }
+  };
+
+  const getTypeIcon = (type: FacilityType) => {
+    switch (type) {
+      case 'clinic':
+        return Hospital;
+      case 'hospital':
+        return Building2;
+      case 'gym':
+        return Dumbbell;
+      default:
+        return Hospital;
+    }
+  };
 
   return (
     <View style={tw`flex-1 bg-background`}>
-      {/* Header & Search Bar */}
-      <View style={tw`pt-12 pb-6 px-6 bg-white rounded-b-3xl shadow-sm`}>
-        <Text style={tw`text-2xl font-bold text-dark mb-4`}>
-          Tìm kiếm bệnh viện
-        </Text>
-        <View
-          style={tw`flex-row items-center bg-gray-100 px-4 py-2 rounded-2xl`}
-        >
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-100`}>
+        <View style={tw`flex-row items-center justify-between mb-4`}>
+          <View>
+            <Text style={tw`text-xs text-primary font-bold mb-1`}>LÀNH CARE</Text>
+            <Text style={tw`text-xl font-bold text-brandDark`}>
+              {selectedType === 'gym' ? 'Gợi ý phòng gym' : 'Gợi ý phòng khám'}
+            </Text>
+          </View>
+          <TouchableOpacity>
+            <MoreVertical size={20} color="#1F2937" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Bar */}
+        <View style={tw`bg-gray-50 rounded-xl px-4 py-3 flex-row items-center`}>
           <Search size={20} color="#9CA3AF" />
           <TextInput
-            placeholder="Tìm bệnh viện, chuyên khoa..."
-            style={tw`flex-1 ml-2 text-base text-dark`}
+            placeholder={
+              selectedType === 'gym'
+                ? 'Nhập tìm kiếm...'
+                : 'Nhập tình trạng của bạn, ví dụ: đau đầu, chóng mặt'
+            }
+            placeholderTextColor="#9CA3AF"
+            style={tw`flex-1 ml-3 text-brandDark`}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
           />
-          <TouchableOpacity style={tw`bg-white p-2 rounded-xl`}>
-            <Filter size={18} color="#22C55E" />
-          </TouchableOpacity>
+        </View>
+
+        {/* Instructional Text */}
+        <Text style={tw`text-textSub text-xs mt-2`}>
+          {selectedType === 'gym'
+            ? 'Nhập tên các phòng gym bạn mong muốn hoặc những nơi có những bài tập mà bạn muốn'
+            : isSymptomSearch
+            ? 'Chúng tôi sẽ gợi ý phòng khám phù hợp nhất'
+            : 'Chúng tôi sẽ gợi ý phòng khám phù hợp với tình trạng của bạn'}
+        </Text>
+
+        {/* Type Filter */}
+        <View style={tw`flex-row mt-4`}>
+          {(['all', 'clinic', 'hospital', 'gym'] as const).map((type) => (
+            <TouchableOpacity
+              key={type}
+              onPress={() => setSelectedType(type)}
+              style={tw`px-4 py-2 rounded-xl mr-2 ${
+                selectedType === type ? 'bg-primary' : 'bg-gray-100'
+              }`}
+            >
+              <Text
+                style={tw`font-semibold text-xs ${
+                  selectedType === type ? 'text-white' : 'text-textSub'
+                }`}
+              >
+                {getTypeLabel(type)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        style={tw`flex-1 px-6 pt-4`}
-      >
-        <View style={tw`flex-row justify-between items-center mb-4`}>
-          <Text style={tw`text-lg font-bold text-dark`}>Kết quả gợi ý</Text>
-          <Text style={tw`text-secondary font-medium`}>5 phòng khám</Text>
+      {/* Results */}
+      {loading ? (
+        <View style={tw`flex-1 items-center justify-center`}>
+          <ActivityIndicator size="large" color="#7FB069" />
         </View>
+      ) : facilities.length > 0 ? (
+        <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
+          <View style={tw`px-6 py-4`}>
+            <View style={tw`flex-row justify-between items-center mb-4`}>
+              <Text style={tw`text-lg font-bold text-brandDark`}>
+                Kết quả gợi ý
+              </Text>
+              <Text style={tw`text-primary font-semibold text-sm`}>
+                {facilities.length} {selectedType === 'gym' ? 'phòng gym' : 'phòng khám'}
+              </Text>
+            </View>
 
-        {/* Danh sách các thẻ Bệnh viện */}
-        <HospitalCard
-          name="Bệnh viện Bạch Mai"
-          address="78 Giải Phóng, Đống Đa, Hà Nội"
-          rating="4.6"
-          distance="2.8 km"
-          isOpen={true}
-          onPress={() => navigation.navigate('HospitalDetail')}
-        />
+            {facilities.map((facility) => (
+              <FacilityCard
+                key={facility.id}
+                facility={facility}
+                onPress={() =>
+                  navigation.navigate('HospitalDetail', { facilityId: facility.id })
+                }
+              />
+            ))}
 
-        <HospitalCard
-          name="Phòng khám Đa khoa Medlatec"
-          address="42-44 Nghĩa Dũng, Ba Đình, Hà Nội"
-          rating="4.8"
-          distance="1.2 km"
-          isOpen={true}
-          onPress={() => navigation.navigate('HospitalDetail')}
-        />
+            {/* More Suggestions Button */}
+            <TouchableOpacity
+              style={tw`bg-white rounded-2xl p-4 items-center border border-gray-100 mb-4`}
+            >
+              <Text style={tw`text-primary font-semibold`}>Gợi ý khác</Text>
+            </TouchableOpacity>
 
-        <HospitalCard
-          name="Trung tâm Y tế Quận Ba Đình"
-          address="27 Núi Trúc, Ba Đình, Hà Nội"
-          rating="4.3"
-          distance="0.8 km"
-          isOpen={false}
-          onPress={() => navigation.navigate('HospitalDetail')}
-        />
-
-        <View style={tw`h-10`} />
-      </ScrollView>
+            {/* Bottom spacing */}
+            <View style={tw`h-6`} />
+          </View>
+        </ScrollView>
+      ) : searchQuery.trim() ? (
+        <View style={tw`flex-1 items-center justify-center px-6`}>
+          <View style={tw`w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-4`}>
+            {selectedType === 'gym' ? (
+              <Dumbbell size={40} color="#9CA3AF" />
+            ) : (
+              <Hospital size={40} color="#9CA3AF" />
+            )}
+          </View>
+          <Text style={tw`text-brandDark font-semibold text-base mb-2`}>
+            Không tìm thấy kết quả
+          </Text>
+          <Text style={tw`text-textSub text-sm text-center`}>
+            Hãy thử tìm kiếm với từ khóa khác hoặc mô tả tình trạng của bạn
+          </Text>
+        </View>
+      ) : (
+        <View style={tw`flex-1 items-center justify-center px-6`}>
+          <View style={tw`w-24 h-24 bg-gray-100 rounded-full items-center justify-center mb-4`}>
+            {selectedType === 'gym' ? (
+              <Dumbbell size={40} color="#9CA3AF" />
+            ) : (
+              <Hospital size={40} color="#9CA3AF" />
+            )}
+          </View>
+          <Text style={tw`text-brandDark font-semibold text-base mb-2 text-center`}>
+            {selectedType === 'gym'
+              ? 'Tìm phòng gym phù hợp'
+              : 'Nhập tình trạng để tìm phòng khám'}
+          </Text>
+          <Text style={tw`text-textSub text-sm text-center`}>
+            {selectedType === 'gym'
+              ? 'Nhập tên các phòng gym bạn mong muốn hoặc những nơi có những bài tập mà bạn muốn'
+              : 'Ví dụ: đau đầu, chóng mặt, sốt, ho...'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
 
-// Component thẻ Bệnh viện
-const HospitalCard = ({
-  name,
-  address,
-  rating,
-  distance,
-  isOpen,
-  onPress,
-}: any) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={tw`bg-white p-4 rounded-3xl mb-4 shadow-sm border border-gray-50`}
-  >
-    <View style={tw`flex-row`}>
-      <View
-        style={tw`w-20 h-20 bg-gray-100 rounded-2xl items-center justify-center mr-4`}
-      >
-        <MapPin size={32} color="#22C55E" />
-      </View>
-      <View style={tw`flex-1`}>
-        <Text style={tw`text-base font-bold text-dark mb-1`}>{name}</Text>
-        <Text style={tw`text-xs text-gray-500 mb-2 leading-4`}>{address}</Text>
-        <View style={tw`flex-row items-center`}>
-          <View
-            style={tw`flex-row items-center bg-yellow-50 px-2 py-0.5 rounded-lg mr-3`}
-          >
-            <Star size={12} color="#F59E0B" fill="#F59E0B" />
-            <Text style={tw`text-yellow-700 text-[10px] font-bold ml-1`}>
-              {rating}
+interface FacilityCardProps {
+  facility: Facility;
+  onPress: () => void;
+}
+
+const FacilityCard = ({ facility, onPress }: FacilityCardProps) => {
+  const IconComponent = facility.type === 'gym' ? Dumbbell : facility.type === 'hospital' ? Building2 : Hospital;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={tw`bg-white rounded-2xl p-4 mb-4 shadow-sm border border-gray-100`}
+    >
+      <View style={tw`flex-row`}>
+        {/* Icon/Image */}
+        <View
+          style={tw`w-20 h-20 bg-gray-100 rounded-xl items-center justify-center mr-4`}
+        >
+          <IconComponent size={32} color="#7FB069" />
+        </View>
+
+        <View style={tw`flex-1`}>
+          {/* Name */}
+          <Text style={tw`text-brandDark font-bold text-base mb-1`}>
+            {facility.name}
+          </Text>
+
+          {/* Address */}
+          <View style={tw`flex-row items-start mb-2`}>
+            <MapPin size={14} color="#9CA3AF" style={tw`mt-0.5 mr-1`} />
+            <Text style={tw`text-textSub text-xs flex-1 leading-4`}>
+              {facility.location.address}, {facility.location.district},{' '}
+              {facility.location.city}
             </Text>
           </View>
-          <Text style={tw`text-gray-400 text-[10px]`}>{distance}</Text>
-          <View style={tw`flex-row items-center ml-auto`}>
-            <View
-              style={tw`w-1.5 h-1.5 rounded-full ${
-                isOpen ? 'bg-green-500' : 'bg-red-500'
-              } mr-1`}
-            />
-            <Text
-              style={tw`${
-                isOpen ? 'text-green-600' : 'text-red-600'
-              } text-[10px] font-medium`}
-            >
-              {isOpen ? 'Đang mở cửa' : 'Đóng cửa'}
-            </Text>
+
+          {/* Specialty (for clinics/hospitals) */}
+          {facility.specialty && (
+            <View style={tw`bg-primaryLight/30 px-2 py-1 rounded-lg self-start mb-2`}>
+              <Text style={tw`text-primary font-semibold text-xs`}>
+                {facility.specialty}
+              </Text>
+            </View>
+          )}
+
+          {/* Rating, Distance, Status */}
+          <View style={tw`flex-row items-center flex-wrap`}>
+            {/* Rating */}
+            <View style={tw`flex-row items-center bg-yellow-50 px-2 py-1 rounded-lg mr-2 mb-1`}>
+              <Star size={12} color="#F59E0B" fill="#F59E0B" />
+              <Text style={tw`text-yellow-700 text-xs font-bold ml-1`}>
+                {facility.rating}
+              </Text>
+            </View>
+
+            {/* Distance */}
+            {facility.distance && (
+              <Text style={tw`text-textSub text-xs mr-3 mb-1`}>
+                {facility.distance} km
+              </Text>
+            )}
+
+            {/* Status */}
+            <View style={tw`flex-row items-center mb-1`}>
+              <View
+                style={tw`w-2 h-2 rounded-full mr-1 ${
+                  facility.isOpen ? 'bg-green-500' : 'bg-red-500'
+                }`}
+              />
+              <Text
+                style={tw`text-xs font-medium ${
+                  facility.isOpen ? 'text-green-600' : 'text-red-600'
+                }`}
+              >
+                {facility.statusText || (facility.isOpen ? 'Đang mở cửa' : 'Đóng cửa')}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
-    </View>
-    <View
-      style={tw`mt-4 pt-3 border-t border-gray-50 flex-row justify-between items-center`}
-    >
-      <Text style={tw`text-secondary text-xs font-bold`}>Xem chi tiết</Text>
-      <ChevronRight size={16} color="#22C55E" />
-    </View>
-  </TouchableOpacity>
-);
+
+      {/* Action Buttons */}
+      <View style={tw`flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100`}>
+        <TouchableOpacity
+          onPress={onPress}
+          style={tw`flex-row items-center`}
+        >
+          <Text style={tw`text-primary font-semibold text-sm`}>Xem chi tiết</Text>
+          <ChevronRight size={16} color="#7FB069" style={tw`ml-1`} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={tw`flex-row items-center bg-primaryLight/30 px-4 py-2 rounded-xl`}
+        >
+          <Navigation size={16} color="#7FB069" />
+          <Text style={tw`text-primary font-semibold text-sm ml-2`}>Chỉ đường</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default HospitalSearchScreen;

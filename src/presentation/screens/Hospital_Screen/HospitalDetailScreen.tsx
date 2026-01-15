@@ -1,112 +1,296 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity} from 'react-native';
+// src/presentation/screens/Hospital_Screen/HospitalDetailScreen.tsx
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+  Linking,
+} from 'react-native';
 import tw from '../../../utils/tailwind';
 import {
   ChevronLeft,
   MapPin,
   Star,
   Phone,
-
-  ShieldCheck,
+  Clock,
+  Navigation,
+  Building2,
+  Hospital,
+  Dumbbell,
+  MoreVertical,
 } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { getFacilityByIdUseCase } from '../../../di/Container';
+import { Facility } from '../../../domain/entities/Hospital';
+import LinearGradient from 'react-native-linear-gradient';
 
 const HospitalDetailScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { facilityId } = route.params || {};
+
+  const [facility, setFacility] = useState<Facility | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFacility();
+  }, [facilityId]);
+
+  const loadFacility = async () => {
+    try {
+      if (facilityId) {
+        const data = await getFacilityByIdUseCase.execute(facilityId);
+        setFacility(data);
+      }
+    } catch (error) {
+      console.error('Error loading facility:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCall = () => {
+    if (facility?.phone) {
+      Linking.openURL(`tel:${facility.phone}`);
+    }
+  };
+
+  const handleDirections = () => {
+    if (facility?.location) {
+      const { latitude, longitude } = facility.location;
+      const url = `https://maps.google.com/?daddr=${latitude},${longitude}`;
+      Linking.openURL(url);
+    }
+  };
+
+  const getTypeIcon = () => {
+    if (!facility) return Hospital;
+    switch (facility.type) {
+      case 'gym':
+        return Dumbbell;
+      case 'hospital':
+        return Building2;
+      default:
+        return Hospital;
+    }
+  };
+
+  if (loading || !facility) {
+    return (
+      <View style={tw`flex-1 bg-background items-center justify-center`}>
+        <Text style={tw`text-textSub`}>Đang tải...</Text>
+      </View>
+    );
+  }
+
+  const IconComponent = getTypeIcon();
 
   return (
-    <View style={tw`flex-1 bg-white`}>
+    <View style={tw`flex-1 bg-background`}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+
       {/* Banner Image */}
       <View style={tw`relative h-64 bg-gray-200`}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={tw`absolute top-12 left-6 z-10 bg-white/80 p-2 rounded-xl`}
-        >
-          <ChevronLeft size={24} color="#1F2937" />
-        </TouchableOpacity>
         <View style={tw`flex-1 items-center justify-center`}>
-          <MapPin size={64} color="#22C55E" opacity={0.3} />
-          <Text style={tw`text-gray-400 mt-2 italic`}>
-            [Hình ảnh bệnh viện]
-          </Text>
+          <IconComponent size={80} color="#7FB069" opacity={0.3} />
+        </View>
+
+        {/* Header */}
+        <View style={tw`absolute top-0 left-0 right-0 pt-14 pb-4 px-6 flex-row items-center justify-between`}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={tw`bg-white/90 p-2 rounded-xl`}
+          >
+            <ChevronLeft size={24} color="#1F2937" />
+          </TouchableOpacity>
+          <TouchableOpacity style={tw`bg-white/90 p-2 rounded-xl`}>
+            <MoreVertical size={20} color="#1F2937" />
+          </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={tw`flex-1 -mt-8 bg-white rounded-t-[40px] px-8 pt-8`}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={tw`flex-1 -mt-8 bg-white rounded-t-[40px] px-6 pt-8`}
+      >
+        {/* Name and Rating */}
         <View style={tw`flex-row justify-between items-start mb-4`}>
           <View style={tw`flex-1 mr-4`}>
-            <Text style={tw`text-2xl font-bold text-dark`}>
-              Bệnh viện Bạch Mai
+            <Text style={tw`text-2xl font-bold text-brandDark mb-2`}>
+              {facility.name}
             </Text>
-            <View style={tw`flex-row items-center mt-2`}>
-              <MapPin size={14} color="#22C55E" />
-              <Text style={tw`text-gray-500 text-xs ml-1`}>
-                Đống Đa, Hà Nội
+            <View style={tw`flex-row items-center`}>
+              <MapPin size={14} color="#7FB069" />
+              <Text style={tw`text-textSub text-sm ml-1`}>
+                {facility.location.address}, {facility.location.district},{' '}
+                {facility.location.city}
               </Text>
             </View>
           </View>
-          <View style={tw`bg-yellow-50 p-2 rounded-2xl items-center`}>
+          <View style={tw`bg-yellow-50 p-3 rounded-2xl items-center`}>
             <Star size={20} color="#F59E0B" fill="#F59E0B" />
-            <Text style={tw`text-yellow-700 font-bold text-xs mt-1`}>4.6</Text>
+            <Text style={tw`text-yellow-700 font-bold text-sm mt-1`}>
+              {facility.rating}
+            </Text>
+            {facility.reviewCount && (
+              <Text style={tw`text-yellow-600 text-[10px] mt-0.5`}>
+                ({facility.reviewCount})
+              </Text>
+            )}
           </View>
         </View>
 
-        {/* Quick Stats */}
-        <View style={tw`flex-row justify-between mb-8`}>
-          <StatBox label="Bác sĩ" value="250+" />
-          <StatBox label="Bệnh nhân" value="10k+" />
-          <StatBox label="Kinh nghiệm" value="100 năm" />
+        {/* Status and Distance */}
+        <View style={tw`flex-row items-center mb-6`}>
+          <View style={tw`flex-row items-center mr-4`}>
+            <View
+              style={tw`w-3 h-3 rounded-full mr-2 ${
+                facility.isOpen ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            />
+            <Text
+              style={tw`font-semibold ${
+                facility.isOpen ? 'text-green-600' : 'text-red-600'
+              }`}
+            >
+              {facility.statusText || (facility.isOpen ? 'Đang mở cửa' : 'Đóng cửa')}
+            </Text>
+          </View>
+          {facility.distance && (
+            <Text style={tw`text-textSub text-sm`}>
+              Cách {facility.distance} km
+            </Text>
+          )}
         </View>
 
-        <Text style={tw`text-lg font-bold text-dark mb-3`}>Giới thiệu</Text>
-        <Text style={tw`text-gray-500 leading-5 mb-6`}>
-          Bạch Mai là một trong những bệnh viện lớn nhất Việt Nam. Với đội ngũ y
-          bác sĩ đầu ngành và trang thiết bị hiện đại, chúng tôi cam kết mang
-          lại dịch vụ y tế tốt nhất.
-        </Text>
+        {/* Opening Hours */}
+        {facility.openingHours && (
+          <View style={tw`bg-gray-50 rounded-2xl p-4 mb-6`}>
+            <View style={tw`flex-row items-center mb-2`}>
+              <Clock size={18} color="#7FB069" />
+              <Text style={tw`text-brandDark font-semibold text-base ml-2`}>
+                Giờ mở cửa
+              </Text>
+            </View>
+            <Text style={tw`text-textSub text-sm`}>
+              {facility.openingHours.is24Hours
+                ? '24/7'
+                : `${facility.openingHours.open} - ${facility.openingHours.close}`}
+            </Text>
+          </View>
+        )}
 
-        <Text style={tw`text-lg font-bold text-dark mb-4`}>
-          Dịch vụ nổi bật
-        </Text>
-        <View style={tw`flex-row flex-wrap mb-10`}>
-          <ServiceTag name="Nội tổng quát" />
-          <ServiceTag name="Tim mạch" />
-          <ServiceTag name="Hồi sức cấp cứu" />
-          <ServiceTag name="Chẩn đoán hình ảnh" />
-        </View>
+        {/* Specialty (for clinics/hospitals) */}
+        {facility.specialty && (
+          <View style={tw`mb-6`}>
+            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+              Chuyên khoa
+            </Text>
+            <View style={tw`bg-primaryLight/30 px-4 py-3 rounded-xl`}>
+              <Text style={tw`text-primary font-semibold text-base`}>
+                {facility.specialty}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Description */}
+        {facility.description && (
+          <View style={tw`mb-6`}>
+            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+              Giới thiệu
+            </Text>
+            <Text style={tw`text-textSub leading-6`}>{facility.description}</Text>
+          </View>
+        )}
+
+        {/* Services */}
+        {facility.services && facility.services.length > 0 && (
+          <View style={tw`mb-6`}>
+            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+              Dịch vụ nổi bật
+            </Text>
+            <View style={tw`flex-row flex-wrap`}>
+              {facility.services.map((service, index) => (
+                <View
+                  key={index}
+                  style={tw`bg-primaryLight/30 px-3 py-2 rounded-xl mr-2 mb-2`}
+                >
+                  <Text style={tw`text-primary font-semibold text-xs`}>
+                    {service}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Contact Info */}
+        {facility.phone && (
+          <View style={tw`bg-gray-50 rounded-2xl p-4 mb-6`}>
+            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+              Thông tin liên hệ
+            </Text>
+            <TouchableOpacity
+              onPress={handleCall}
+              style={tw`flex-row items-center`}
+            >
+              <Phone size={18} color="#7FB069" />
+              <Text style={tw`text-primary font-semibold text-base ml-3`}>
+                {facility.phone}
+              </Text>
+            </TouchableOpacity>
+            {facility.website && (
+              <Text style={tw`text-textSub text-sm mt-2`}>
+                Website: {facility.website}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Bottom spacing */}
+        <View style={tw`h-6`} />
       </ScrollView>
 
       {/* Footer Action Buttons */}
-      <View style={tw`p-6 bg-white border-t border-gray-100 flex-row`}>
-        <TouchableOpacity style={tw`bg-gray-100 p-4 rounded-2xl mr-4`}>
-          <Phone size={24} color="#22C55E" />
-        </TouchableOpacity>
+      <View style={tw`bg-white border-t border-gray-100 px-6 py-4 flex-row`}>
+        {facility.phone && (
+          <TouchableOpacity
+            onPress={handleCall}
+            style={tw`bg-gray-100 p-4 rounded-2xl mr-3`}
+          >
+            <Phone size={24} color="#7FB069" />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
-          style={tw`flex-1 bg-secondary p-4 rounded-2xl items-center justify-center`}
+          onPress={handleDirections}
+          style={tw`flex-1 bg-gray-100 p-4 rounded-2xl mr-3 flex-row items-center justify-center`}
         >
-          <Text style={tw`text-white font-bold text-base`}>
-            Đặt lịch hẹn ngay
-          </Text>
+          <Navigation size={20} color="#7FB069" />
+          <Text style={tw`text-primary font-bold text-base ml-2`}>Chỉ đường</Text>
         </TouchableOpacity>
+        {facility.type !== 'gym' && (
+          <TouchableOpacity
+            style={tw`flex-1`}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['#7FB069', '#6A9A5A']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={tw`p-4 rounded-2xl items-center justify-center`}
+            >
+              <Text style={tw`text-white font-bold text-base`}>
+                Đặt lịch hẹn
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 };
-
-const StatBox = ({ label, value }: any) => (
-  <View style={tw`bg-gray-50 p-3 rounded-2xl items-center flex-1 mx-1`}>
-    <Text style={tw`text-secondary font-bold text-sm`}>{value}</Text>
-    <Text style={tw`text-gray-400 text-[10px] mt-1`}>{label}</Text>
-  </View>
-);
-
-const ServiceTag = ({ name }: any) => (
-  <View
-    style={tw`bg-green-50 px-3 py-2 rounded-xl mr-2 mb-2 border border-green-100 flex-row items-center`}
-  >
-    <ShieldCheck size={12} color="#22C55E" style={tw`mr-1`} />
-    <Text style={tw`text-green-700 text-xs font-medium`}>{name}</Text>
-  </View>
-);
 
 export default HospitalDetailScreen;

@@ -1,3 +1,4 @@
+// src/presentation/screens/Onboarding_Screen/OnboardingScreen.tsx
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -7,98 +8,206 @@ import {
   Dimensions,
   Animated,
   StatusBar,
+  Image,
 } from 'react-native';
-import tw from '../../../utils/tailwind'; // Đảm bảo đúng đường dẫn
-import { Activity, Bot, ArrowRight, Utensils } from 'lucide-react-native';
+import tw from '../../../utils/tailwind';
+import { Heart, Brain, Apple, ArrowRight, Leaf } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { completeOnboardingUseCase } from '../../../di/Container';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const DATA = [
+// Data giả cho onboarding slides - sau này có thể lấy từ API
+const ONBOARDING_SLIDES = [
   {
     id: '1',
-    title: 'Theo dõi sức khỏe thông minh',
-    description:
-      'Dễ dàng quản lý các chỉ số cơ thể, nhịp tim và giấc ngủ mỗi ngày với công nghệ tiên tiến.',
-    icon: <Activity size={100} color="#22C55E" />, // Sử dụng primary color
-    bgColor: '#F0FDF4', // Màu xanh cực nhạt làm nền
+    title: 'Lành Care',
+    subtitle: 'Sống khỏe mạnh, sống bình tĩnh',
+    description: '',
+    icon: 'leaf',
+    gradientColors: ['#F5F5F0', '#FAFAF5'], // Cream to beige gradient
   },
   {
     id: '2',
-    title: 'Chế độ ăn uống khoa học',
-    description:
-      'Tìm kiếm hàng ngàn món ăn Việt và tính toán lượng calo chính xác cho từng bữa ăn của bạn.',
-    icon: <Utensils size={100} color="#22C55E" />,
-    bgColor: '#F0FDF4',
+    title: 'Hành trình chăm sóc sức khỏe của bạn',
+    subtitle: 'Khám phá các công cụ để cải thiện sức khỏe và chánh niệm của bạn',
+    features: [
+      {
+        icon: Heart,
+        title: 'Health Tracking',
+        description: 'Monitor your daily wellness metrics.',
+      },
+      {
+        icon: Brain,
+        title: 'Meditation',
+        description: 'Find peace with guided sessions.',
+      },
+      {
+        icon: Apple,
+        title: 'Nutrition Tips',
+        description: 'Personalized healthy eating advice.',
+      },
+    ],
+    gradientColors: ['#FFFFFF', '#F9FAFB'],
   },
   {
     id: '3',
-    title: 'Trợ lý AI Coach 24/7',
-    description:
-      'Trò chuyện cùng AI để nhận được những lời khuyên sức khỏe cá nhân hóa mọi lúc mọi nơi.',
-    icon: <Bot size={100} color="#22C55E" />,
-    bgColor: '#F0FDF4',
+    title: 'Sẵn sàng bắt đầu chưa?',
+    subtitle: 'Tham gia cùng hàng ngàn người trong hành trình chăm sóc sức khỏe của họ',
+    description: '',
+    gradientColors: ['#FFFFFF', '#F5F5F0'],
   },
 ];
 
 const OnboardingScreen = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
-  const slidesRef = useRef<any>(null);
+  const slidesRef = useRef<FlatList>(null);
   const navigation = useNavigation<any>();
 
   const viewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems && viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index);
+      setCurrentIndex(viewableItems[0].index || 0);
     }
   }).current;
 
-  const scrollToNext = () => {
-    if (currentIndex < DATA.length - 1) {
-      slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
+  const scrollToNext = async () => {
+    if (currentIndex < ONBOARDING_SLIDES.length - 1) {
+      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      // Chuyển sang màn hình Đăng nhập
+      // Hoàn thành onboarding và chuyển sang Login
+      await completeOnboardingUseCase.execute();
       navigation.replace('Login');
     }
   };
 
-  const renderItem = ({ item }: any) => (
-    <View style={[tw`flex-1 items-center justify-center px-10`, { width }]}>
-      {/* Vòng tròn nền icon sử dụng màu dịu mắt */}
+  const skipOnboarding = async () => {
+    await completeOnboardingUseCase.execute();
+    navigation.replace('Login');
+  };
+
+  const renderSlide1 = () => (
+    <View style={[tw`flex-1 items-center justify-center px-8`, { width }]}>
+      {/* Logo với icon lá */}
       <View
-        style={[
-          tw`w-64 h-64 rounded-full items-center justify-center mb-12 shadow-sm`,
-          { backgroundColor: item.bgColor },
-        ]}
+        style={tw`w-24 h-24 bg-primary rounded-full items-center justify-center mb-8 shadow-lg`}
       >
-        {item.icon}
+        <Leaf size={48} color="#FFFFFF" />
       </View>
-      <Text
-        style={tw`text-3xl font-black text-brandDark text-center mb-4 leading-9`}
-      >
-        {item.title}
+
+      {/* Title */}
+      <Text style={tw`text-4xl font-black text-primary mb-3`}>Lành Care</Text>
+
+      {/* Subtitle */}
+      <Text style={tw`text-lg text-textSub text-center`}>
+        Sống khỏe mạnh, sống bình tĩnh
       </Text>
-      <Text style={tw`text-gray-500 text-center text-base leading-6 px-4`}>
-        {item.description}
-      </Text>
+
+      {/* Illustration placeholder - có thể thay bằng image thật */}
+      <View style={tw`mt-16 w-80 h-80 bg-primaryLight/30 rounded-3xl items-center justify-center`}>
+        <View style={tw`w-64 h-64 bg-primary/10 rounded-2xl items-center justify-center`}>
+          <Brain size={120} color="#7FB069" opacity={0.3} />
+        </View>
+      </View>
     </View>
   );
 
+  const renderSlide2 = () => (
+    <View style={[tw`flex-1 px-8 pt-16`, { width }]}>
+      {/* Title */}
+      <Text style={tw`text-3xl font-black text-brandDark mb-2 text-center`}>
+        Hành trình chăm sóc sức khỏe của bạn
+      </Text>
+
+      {/* Subtitle */}
+      <Text style={tw`text-base text-textSub text-center mb-12`}>
+        Khám phá các công cụ để cải thiện sức khỏe và chánh niệm của bạn
+      </Text>
+
+      {/* Features */}
+      {ONBOARDING_SLIDES[1].features?.map((feature, index) => {
+        const IconComponent = feature.icon;
+        return (
+          <View
+            key={index}
+            style={tw`flex-row items-start mb-8 bg-white rounded-2xl p-5 shadow-sm border border-gray-100`}
+          >
+            <View
+              style={tw`w-14 h-14 bg-primaryLight rounded-2xl items-center justify-center mr-4`}
+            >
+              <IconComponent size={28} color="#7FB069" />
+            </View>
+            <View style={tw`flex-1`}>
+              <Text style={tw`text-lg font-bold text-brandDark mb-1`}>
+                {feature.title}
+              </Text>
+              <Text style={tw`text-sm text-textSub`}>{feature.description}</Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+
+  const renderSlide3 = () => (
+    <View style={[tw`flex-1 items-center justify-center px-8`, { width }]}>
+      {/* Title */}
+      <Text style={tw`text-3xl font-black text-brandDark mb-4 text-center`}>
+        Sẵn sàng bắt đầu chưa?
+      </Text>
+
+      {/* Subtitle */}
+      <Text style={tw`text-base text-textSub text-center mb-16 px-4`}>
+        Tham gia cùng hàng ngàn người trong hành trình chăm sóc sức khỏe của họ
+      </Text>
+
+      {/* Illustration placeholder - có thể thay bằng image thật */}
+      <View style={tw`w-72 h-72 bg-primaryLight/20 rounded-3xl items-center justify-center mb-16`}>
+        <View style={tw`flex-row flex-wrap justify-center`}>
+          {[1, 2, 3, 4].map((i) => (
+            <View
+              key={i}
+              style={tw`w-24 h-24 bg-primary/20 rounded-2xl m-2 items-center justify-center`}
+            >
+              <Heart size={40} color="#7FB069" opacity={0.5} />
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderItem = ({ item, index }: any) => {
+    switch (index) {
+      case 0:
+        return renderSlide1();
+      case 1:
+        return renderSlide2();
+      case 2:
+        return renderSlide3();
+      default:
+        return null;
+    }
+  };
+
   return (
     <View style={tw`flex-1 bg-white`}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Nút Bỏ qua sử dụng màu textSub nhạt */}
-      <TouchableOpacity
-        onPress={() => navigation.replace('Main')}
-        style={tw`absolute top-14 right-8 z-10`}
-      >
-        <Text style={tw`text-gray-400 font-bold text-base`}>Bỏ qua</Text>
-      </TouchableOpacity>
+      {/* Skip Button */}
+      {currentIndex < ONBOARDING_SLIDES.length - 1 && (
+        <TouchableOpacity
+          onPress={skipOnboarding}
+          style={tw`absolute top-14 right-6 z-10`}
+        >
+          <Text style={tw`text-textSub font-semibold text-base`}>Bỏ qua</Text>
+        </TouchableOpacity>
+      )}
 
+      {/* Slides */}
       <FlatList
-        data={DATA}
+        data={ONBOARDING_SLIDES}
         renderItem={renderItem}
         horizontal
         pagingEnabled
@@ -107,34 +216,34 @@ const OnboardingScreen = () => {
         keyExtractor={item => item.id}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          {
-            useNativeDriver: false,
-          },
+          { useNativeDriver: false },
         )}
         onViewableItemsChanged={viewableItemsChanged}
         ref={slidesRef}
+        scrollEnabled={false} // Disable manual scroll, chỉ dùng nút
       />
 
-      <View style={tw`pb-16 px-10`}>
-        {/* Pagination Dots - Chuyển sang dùng màu primary đồng bộ */}
-        <View style={tw`flex-row justify-center mb-10`}>
-          {DATA.map((_, i) => {
+      {/* Bottom Section */}
+      <View style={tw`pb-12 px-8`}>
+        {/* Pagination Dots */}
+        <View style={tw`flex-row justify-center mb-8`}>
+          {ONBOARDING_SLIDES.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
             const dotWidth = scrollX.interpolate({
               inputRange,
-              outputRange: [10, 28, 10],
+              outputRange: [8, 24, 8],
               extrapolate: 'clamp',
             });
             const opacity = scrollX.interpolate({
               inputRange,
-              outputRange: [0.2, 1, 0.2],
+              outputRange: [0.3, 1, 0.3],
               extrapolate: 'clamp',
             });
             return (
               <Animated.View
                 key={i.toString()}
                 style={[
-                  tw`h-2.5 bg-primary rounded-full mx-1.5`,
+                  tw`h-2 bg-primary rounded-full mx-1.5`,
                   { width: dotWidth, opacity },
                 ]}
               />
@@ -142,20 +251,20 @@ const OnboardingScreen = () => {
           })}
         </View>
 
-        {/* Nút bấm Gradient Xanh lá chuyên nghiệp */}
+        {/* Next/Get Started Button */}
         <TouchableOpacity onPress={scrollToNext} activeOpacity={0.9}>
           <LinearGradient
-            colors={['#22C55E', '#16A34A']}
+            colors={['#7FB069', '#6A9A5A']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={tw`h-18 rounded-[25px] flex-row items-center justify-center shadow-lg`}
+            style={tw`h-16 rounded-2xl flex-row items-center justify-center shadow-lg`}
           >
             <Text
-              style={tw`text-white font-black text-lg mr-2 uppercase tracking-tight`}
+              style={tw`text-white font-bold text-lg mr-2`}
             >
-              {currentIndex === DATA.length - 1 ? 'BẮT ĐẦU NGAY' : 'TIẾP TỤC'}
+              {currentIndex === ONBOARDING_SLIDES.length - 1 ? 'Bắt đầu' : 'Tiếp'}
             </Text>
-            <ArrowRight size={22} color="white" />
+            <ArrowRight size={22} color="#FFFFFF" />
           </LinearGradient>
         </TouchableOpacity>
       </View>

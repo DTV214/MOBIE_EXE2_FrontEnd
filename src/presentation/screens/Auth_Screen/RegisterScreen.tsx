@@ -1,3 +1,4 @@
+// src/presentation/screens/Auth_Screen/RegisterScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import {
   EyeOff,
   ArrowRight,
   ChevronLeft,
+  Leaf,
 } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -29,129 +31,136 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation<any>();
 
+  const handleRegister = () => {
+    // TODO: Implement register logic với API
+    // Hiện tại chỉ điều hướng vào trang Main
+    navigation.replace('Main');
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={tw`flex-1 bg-white`}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={tw`flex-grow`}
       >
-        {/* 1. Header with Back Button */}
-        <View style={tw`pt-14 px-6 flex-row items-center justify-between`}>
+        {/* Header với Back Button */}
+        <View style={tw`pt-14 px-6 flex-row items-center justify-between mb-4`}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={tw`p-3 bg-gray-50 rounded-2xl border border-gray-100`}
           >
             <ChevronLeft size={24} color="#1F2937" />
           </TouchableOpacity>
-          <Text style={tw`text-primary font-black italic text-xl`}>
-            LanhCare
-          </Text>
-          <View style={tw`w-12`} /> {/* Spacer to center title */}
+          <View style={tw`flex-row items-center`}>
+            <Leaf size={24} color="#7FB069" />
+            <Text style={tw`text-primary font-black text-xl ml-2`}>Lành Care</Text>
+          </View>
+          <View style={tw`w-12`} /> {/* Spacer để center title */}
         </View>
 
-        <View style={tw`px-8 pt-10`}>
-          {/* 2. Welcome Text */}
+        <View style={tw`px-8 flex-1`}>
+          {/* Title */}
           <Text style={tw`text-3xl font-black text-brandDark mb-2`}>
-            Tạo tài khoản 📝
+            Tạo Tài Khoản
           </Text>
-          <Text style={tw`text-gray-400 text-base mb-8`}>
-            Tham gia cùng chúng tôi để bắt đầu theo dõi sức khỏe của bạn ngay
-            hôm nay.
+          <Text style={tw`text-base text-textSub mb-10`}>
+            Sống khỏe mạnh, sống bình tĩnh
           </Text>
 
-          {/* 3. Input Fields */}
+          {/* Input Fields */}
           <View style={tw`mb-6`}>
             {/* Full Name */}
             <View
-              style={tw`flex-row items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-4`}
+              style={tw`bg-white border border-gray-200 rounded-2xl px-4 py-4 mb-4 shadow-sm`}
             >
-              <User size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Họ và tên"
-                placeholderTextColor="#9CA3AF"
-                style={tw`flex-1 ml-3 text-brandDark`}
-                value={name}
-                onChangeText={setName}
-              />
+              <Text style={tw`text-xs text-textSub mb-2 font-semibold`}>Tên đầy đủ</Text>
+              <View style={tw`flex-row items-center`}>
+                <User size={20} color="#9CA3AF" />
+                <TextInput
+                  placeholder="Nhập tên đầy đủ"
+                  placeholderTextColor="#9CA3AF"
+                  style={tw`flex-1 ml-3 text-brandDark text-base`}
+                  value={name}
+                  onChangeText={setName}
+                />
+              </View>
             </View>
 
             {/* Email */}
             <View
-              style={tw`flex-row items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-4`}
+              style={tw`bg-white border border-gray-200 rounded-2xl px-4 py-4 mb-4 shadow-sm`}
             >
-              <Mail size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Địa chỉ Email"
-                placeholderTextColor="#9CA3AF"
-                style={tw`flex-1 ml-3 text-brandDark`}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+              <Text style={tw`text-xs text-textSub mb-2 font-semibold`}>Email</Text>
+              <View style={tw`flex-row items-center`}>
+                <Mail size={20} color="#9CA3AF" />
+                <TextInput
+                  placeholder="Nhập email"
+                  placeholderTextColor="#9CA3AF"
+                  style={tw`flex-1 ml-3 text-brandDark text-base`}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
             </View>
 
             {/* Password */}
             <View
-              style={tw`flex-row items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 mb-6`}
+              style={tw`bg-white border border-gray-200 rounded-2xl px-4 py-4 mb-6 shadow-sm`}
             >
-              <Lock size={20} color="#9CA3AF" />
-              <TextInput
-                placeholder="Mật khẩu"
-                placeholderTextColor="#9CA3AF"
-                style={tw`flex-1 ml-3 text-brandDark`}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                {showPassword ? (
-                  <EyeOff size={20} color="#9CA3AF" />
-                ) : (
-                  <Eye size={20} color="#9CA3AF" />
-                )}
-              </TouchableOpacity>
+              <Text style={tw`text-xs text-textSub mb-2 font-semibold`}>Mật khẩu</Text>
+              <View style={tw`flex-row items-center`}>
+                <Lock size={20} color="#9CA3AF" />
+                <TextInput
+                  placeholder="Tạo mật khẩu"
+                  placeholderTextColor="#9CA3AF"
+                  style={tw`flex-1 ml-3 text-brandDark text-base`}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  {showPassword ? (
+                    <EyeOff size={20} color="#9CA3AF" />
+                  ) : (
+                    <Eye size={20} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Terms and Conditions Note */}
-            <Text style={tw`text-gray-400 text-xs text-center mb-8`}>
+            <Text style={tw`text-textSub text-xs text-center mb-8`}>
               Bằng cách đăng ký, bạn đồng ý với{' '}
-              <Text style={tw`text-primary font-bold`}>Điều khoản dịch vụ</Text>{' '}
-              và{' '}
-              <Text style={tw`text-primary font-bold`}>Chính sách bảo mật</Text>{' '}
-              của chúng tôi.
+              <Text style={tw`text-primary font-bold`}>Điều khoản dịch vụ</Text> và{' '}
+              <Text style={tw`text-primary font-bold`}>Chính sách bảo mật</Text> của chúng
+              tôi.
             </Text>
           </View>
 
-          {/* 4. Register Button */}
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => navigation.replace('Main')}
-          >
+          {/* Register Button */}
+          <TouchableOpacity onPress={handleRegister} activeOpacity={0.9}>
             <LinearGradient
-              colors={['#22C55E', '#16A34A']}
+              colors={['#7FB069', '#6A9A5A']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={tw`h-16 rounded-2xl flex-row items-center justify-center shadow-lg`}
+              style={tw`h-16 rounded-2xl flex-row items-center justify-center shadow-lg mb-8`}
             >
-              <Text
-                style={tw`text-white font-black text-lg mr-2 uppercase tracking-tighter italic`}
-              >
-                Đăng Ký Ngay
-              </Text>
-              <ArrowRight size={20} color="white" />
+              <Text style={tw`text-white font-bold text-lg mr-2`}>Đăng ký</Text>
+              <ArrowRight size={20} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
 
-          {/* 5. Login Footer */}
-          <View style={tw`flex-row justify-center py-10`}>
-            <Text style={tw`text-gray-400`}>Đã có tài khoản? </Text>
+          {/* Login Footer */}
+          <View style={tw`flex-row justify-center pb-10`}>
+            <Text style={tw`text-textSub`}>Đã có tài khoản? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={tw`text-primary font-black`}>Đăng nhập</Text>
+              <Text style={tw`text-primary font-bold`}>Đăng nhập</Text>
             </TouchableOpacity>
           </View>
         </View>

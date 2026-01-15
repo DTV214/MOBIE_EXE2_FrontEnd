@@ -14,7 +14,7 @@ import DashboardScreen from '../screens/Dashboard_Screen/DashboardScreen';
 import ProfileScreen from '../screens/Setting_Screen/SettingsScreen';
 import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
 import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
-import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
+import AIChatListScreen from '../screens/AI_Screen/AIChatListScreen';
 import ForumScreen from '../screens/Forum_Screen/ForumScreen';
 
 const Tab = createBottomTabNavigator();
@@ -46,7 +46,7 @@ const MainTabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#22C55E',
+        tabBarActiveTintColor: '#7FB069', // Màu primary mới từ Figma
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: tw`bg-white border-t border-gray-100 h-16 pb-2 pt-2 shadow-lg`,
         tabBarLabelStyle: tw`text-[10px] font-medium`,
@@ -58,7 +58,7 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Bệnh viện" component={HospitalSearchScreen} />
       <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} />
       <Tab.Screen name="Diễn đàn" component={ForumScreen} />
-      <Tab.Screen name="AI" component={AIChatScreen} />
+      <Tab.Screen name="AI" component={AIChatListScreen} />
       <Tab.Screen name="Hồ sơ" component={ProfileScreen} />
     </Tab.Navigator>
   );
