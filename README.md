@@ -175,6 +175,28 @@ src/
   * *Khắc phục:* Tắt Metro, chạy `cd android && ./gradlew clean`, sau đó chạy lại `npx react-native run-android`.
 
 -----
+src/
+├── domain/
+│   ├── entities/
+│   │   └── Subscription.ts (Plan, PaymentMethod, Transaction, Subscription)
+│   ├── repositories/
+│   │   └── ISubscriptionRepository.ts
+│   └── usecases/
+│       ├── GetAllPlans.ts
+│       ├── GetPlanById.ts
+│       ├── GetPaymentMethods.ts
+│       ├── ProcessPayment.ts
+│       └── GetTransactionById.ts
+├── data/
+│   └── repositories/
+│       └── MockSubscriptionRepository.ts (3 plans, payment methods)
+└── presentation/
+    └── screens/
+        └── Subscription_Screen/
+            ├── ChoosePlanScreen.tsx
+            ├── PaymentMethodScreen.tsx
+            ├── ConfirmPaymentScreen.tsx
+            └── PaymentSuccessScreen.tsx
 
 ## 📞 Liên Hệ Dev Team
 
