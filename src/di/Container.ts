@@ -39,6 +39,8 @@ import { GetPaymentMethods } from '../domain/usecases/GetPaymentMethods';
 import { ProcessPayment } from '../domain/usecases/ProcessPayment';
 import { GetTransactionById } from '../domain/usecases/GetTransactionById';
 
+import { AuthRepositoryImpl } from '../data/repositories/auth/AuthRepositoryImpl';
+import { LoginWithGoogle } from '../domain/usecases/auth/LoginWithGoogle';
 // Repositories - Sau này có API thật thì chỉ cần đổi dòng này là xong
 const userRepository = new MockUserRepository();
 const storageRepository = new StorageRepository();
@@ -48,7 +50,7 @@ const forumRepository = new MockForumRepository();
 const chatRepository = new MockChatRepository();
 const hospitalRepository = new MockHospitalRepository();
 const subscriptionRepository = new MockSubscriptionRepository();
-
+const authRepository = new AuthRepositoryImpl();
 // Use Cases
 export const getUserProfileUseCase = new GetUserProfile(userRepository);
 export const checkOnboardingStatusUseCase = new CheckOnboardingStatus(storageRepository);
@@ -82,3 +84,4 @@ export const getPlanByIdUseCase = new GetPlanById(subscriptionRepository);
 export const getPaymentMethodsUseCase = new GetPaymentMethods(subscriptionRepository);
 export const processPaymentUseCase = new ProcessPayment(subscriptionRepository);
 export const getTransactionByIdUseCase = new GetTransactionById(subscriptionRepository);
+export const loginWithGoogleUseCase = new LoginWithGoogle(authRepository);
