@@ -1,43 +1,41 @@
 {
   "project_info": {
-    "project_number": "144144442191",
-    "project_id": "healthapp-lanhcare",
-    "storage_bucket": "healthapp-lanhcare.firebasestorage.app"
+    "project_number": "572891748659",
+    "project_id": "healthapp-lanhcare-caacc",
+    "storage_bucket": "healthapp-lanhcare-caacc.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:144144442191:android:d0355a46f00c9014601b3a",
+        "mobilesdk_app_id": "1:572891748659:android:d89d9a32f0ad3fa2670646",
         "android_client_info": {
           "package_name": "com.healthapp"
         }
       },
       "oauth_client": [
         {
-
-          "client_id": "144144442191-klujpoesodiqkt1ab3sltpitg1qhe8dd.apps.googleusercontent.com",
+          "client_id": "572891748659-pb6q82vf5djekbo80kvklh6ekadub292.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.healthapp",
-            "certificate_hash": "03a5660c58c1102390be5e1261b2d290d52c9ce2"
+            "certificate_hash": "42e6df030f929ebb0029135726a2f2484d8099e1"
           }
         },
-        
         {
-          "client_id": "144144442191-4omafm2jo2s1h6fbmlh34rcg2v9e4f4m.apps.googleusercontent.com",
+          "client_id": "572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC71dBkUduHpx9flGntQgF_4Lga1gztlHw"
+          "current_key": "AIzaSyCewnsS5lY7vZKDItpw3o_dzlAQSwtsJl4"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "144144442191-4omafm2jo2s1h6fbmlh34rcg2v9e4f4m.apps.googleusercontent.com",
+              "client_id": "572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

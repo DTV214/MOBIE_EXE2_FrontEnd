@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './RootNavigator';
 import Toast from 'react-native-toast-message';
 import { checkOnboardingStatusUseCase } from '../../di/Container';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import tw from '../../utils/tailwind';
 
 const AppNavigator = () => {
@@ -18,11 +19,24 @@ const AppNavigator = () => {
 
   const checkOnboardingAndNavigate = async () => {
     try {
-      const hasCompleted = await checkOnboardingStatusUseCase.execute();
-      // Nếu đã xem onboarding thì vào Login, chưa thì vào Onboarding
-      setInitialRoute(hasCompleted ? 'Login' : 'Onboarding');
+      // ✅ FIXED: Enhanced navigation logic - check both onboarding and auth status
+      const [hasOnboarded, token] = await Promise.all([
+        checkOnboardingStatusUseCase.execute(),
+        AsyncStorage.getItem('user_token')
+      ]);
+
+      if (token) {
+        // User đã login → vào Main app
+        setInitialRoute('Main');
+      } else if (hasOnboarded) {
+        // Đã onboard nhưng chưa login → vào Login
+        setInitialRoute('Login');
+      } else {
+        // Chưa onboard → vào Onboarding
+        setInitialRoute('Onboarding');
+      }
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('Error checking app status:', error);
       // Mặc định vào Onboarding nếu có lỗi
       setInitialRoute('Onboarding');
     } finally {

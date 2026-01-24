@@ -1,7 +1,6 @@
 // src/presentation/navigation/RootNavigator.tsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import Screens
 import OnboardingScreen from '../screens/Onboarding_Screen/OnboardingScreen';
@@ -26,36 +25,13 @@ import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
 
 const Stack = createNativeStackNavigator();
 
-const RootNavigator = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [initialRoute, setInitialRoute] = useState<string>('Onboarding');
-
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem('user_token');
-        if (token) {
-          setInitialRoute('Main');
-        }
-      } catch (error) {
-        console.error('Lỗi kiểm tra token:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkLoginStatus();
-  }, []);
-
-  // Trong khi đợi kiểm tra AsyncStorage, trả về null (hoặc một SplashScreen)
-  // để tránh hiển thị sai màn hình
-  if (isLoading) {
-    return null;
-  }
+const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
+  // ✅ FIXED: Nhận initialRouteName từ AppNavigator, không tự check token
+  // Loại bỏ duplicate logic để tránh race condition
 
   return (
     <Stack.Navigator
-      initialRouteName={initialRoute}
+      initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />

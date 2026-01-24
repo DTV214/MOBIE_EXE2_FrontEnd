@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 export class AuthRepositoryImpl implements IAuthRepository {
-  // LƯU Ý: Đã sửa lại logic apiUrl cho đúng (Android Emulator dùng 10.0.2.2)
+  // ✅ FIXED: Sử dụng callback endpoint theo luồng chuẩn
   private apiUrl =
     Platform.OS === 'android'
       ? 'http://10.0.2.2:8080/api/auth/google/android-callback'
@@ -16,37 +16,62 @@ export class AuthRepositoryImpl implements IAuthRepository {
     try {
       console.log('--- Step 3: Gọi API Backend ---');
       console.log('Endpoint:', this.apiUrl);
-      console.log('Payload:', { idToken: idToken.substring(0, 10) + '...' });
+      console.log('Authorization:', 'Bearer ' + idToken.substring(0, 10) + '...');
 
-      const response = await axios.post(this.apiUrl, { idToken });
+      // ✅ FIXED: Sử dụng Authorization header theo luồng chuẩn
+      const response = await axios.post(this.apiUrl, {}, {
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
       console.log('--- Step 4: Phản hồi từ Backend ---');
       console.log('Status:', response.status);
       console.log('Data thô từ BE:', response.data);
 
+      // ✅ FIXED: Map response theo API specification
       const result = {
-        user: response.data.user,
-        jwt: response.data.accessToken || response.data.token,
+        user: {
+          id: response.data.userId,
+          fullname: response.data.fullname,
+          email: response.data.email,
+          role: response.data.roles,
+          status: 'active' // Default status
+        },
+        jwt: response.data.accessToken,
       };
 
       // Kiểm tra xem dữ liệu có bị undefined không
-      if (!result.user || !result.jwt) {
-        console.error('Dữ liệu BE trả về thiếu trường user hoặc token!');
+      if (!result.user.id || !result.jwt) {
+        console.error('Dữ liệu BE trả về thiếu trường userId hoặc accessToken!');
+        throw new Error('Response thiếu dữ liệu quan trọng');
       }
 
       return result;
     } catch (error: any) {
       console.error('--- Lỗi tại Repository ---');
+      
       if (error.response) {
-        console.error(
-          'BE trả về lỗi:',
-          error.response.status,
-          error.response.data,
-        );
+        // Backend trả về lỗi HTTP
+        console.error('BE trả về lỗi:', error.response.status, error.response.data);
+        
+        if (error.response.status === 401) {
+          throw new Error('Google token không hợp lệ hoặc đã hết hạn');
+        } else if (error.response.status === 500) {
+          throw new Error('Lỗi server nội bộ - vui lòng thử lại sau');
+        } else {
+          throw new Error(`Lỗi server: ${error.response.status}`);
+        }
       } else if (error.request) {
+        // Network error
         console.error('Không kết nối được tới BE (kiểm tra IP/Wifi/Cổng 8080)');
+        throw new Error('Không thể kết nối đến server - kiểm tra kết nối mạng');
+      } else {
+        // Other errors
+        console.error('Lỗi không xác định:', error.message);
+        throw new Error('Đăng nhập thất bại - vui lòng thử lại');
       }
-      throw new Error('Đăng nhập Google thất bại tại Server');
     }
   }
 

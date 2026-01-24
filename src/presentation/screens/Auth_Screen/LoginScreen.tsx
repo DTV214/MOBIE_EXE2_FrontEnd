@@ -30,12 +30,12 @@ const LoginScreen = () => {
     navigation.replace('Main');
   };
 
-  // useEffect để cấu hình Google
+// useEffect để cấu hình Google
 useEffect(() => {
   GoogleSignin.configure({
-    // Sử dụng Web Client ID từ file JSON (loại 3)
+    // ✅ UPDATED: Web Client ID từ Firebase OAuth
     webClientId:
-      '144144442191-4omafm2jo2s1h6fbmlh34rcg2v9e4f4m.apps.googleusercontent.com',
+      '572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com',
     offlineAccess: true,
     forceCodeForRefreshToken: true,
     scopes: ['profile', 'email'],
@@ -46,14 +46,30 @@ useEffect(() => {
 
   const handleGoogleLogin = async () => {
     console.log('--- Step 1: Click nút Google Login ---');
-    const success = await loginWithGoogle();
-    console.log('--- Step 5: Kết quả cuối cùng tại Screen ---', success);
+    
+    try {
+      const success = await loginWithGoogle();
+      console.log('--- Step 5: Kết quả cuối cùng tại Screen ---', success);
 
-    if (success) {
-      navigation.replace('Main');
-    } else if (error) {
-      console.error('Lỗi hiển thị Toast:', error);
-      Toast.show({ type: 'error', text1: 'Lỗi', text2: error });
+      if (success) {
+        navigation.replace('Main');
+      } else if (error) {
+        console.error('Lỗi hiển thị Toast:', error);
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Lỗi đăng nhập', 
+          text2: error,
+          visibilityTime: 4000
+        });
+      }
+    } catch (screenError: any) {
+      console.error('Unexpected error in LoginScreen:', screenError);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Lỗi', 
+        text2: 'Có lỗi không mong muốn xảy ra',
+        visibilityTime: 4000
+      });
     }
   };
   return (
