@@ -3,21 +3,22 @@ import {
   GoogleSignin,
   isSuccessResponse,
 } from '@react-native-google-signin/google-signin';
-// Import trực tiếp hằng số use case từ Container
 import { loginWithGoogleUseCase } from '../../di/Container';
 import { User } from '../../domain/entities/User';
 
 interface AuthState {
   user: User | null;
+  token: string | null; // Lưu thêm token vào store nếu cần dùng nhanh
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
   loginWithGoogle: () => Promise<boolean>;
   logout: () => Promise<void>;
-} 
+}
 
 export const useAuthStore = create<AuthState>(set => ({
   user: null,
+  token: null,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -27,6 +28,12 @@ export const useAuthStore = create<AuthState>(set => ({
       console.log('--- Step 2: Bắt đầu gọi GoogleSignin.signIn() ---');
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
+      try {
+        await GoogleSignin.signOut();
+      } catch (e) {
+        console.log(e);
+        // Bỏ qua nếu chưa có ai đăng nhập
+      }
       console.log(
         'Phản hồi thô từ Google SDK:',
         JSON.stringify(response, null, 2),
@@ -40,23 +47,24 @@ export const useAuthStore = create<AuthState>(set => ({
         );
 
         try {
-          // Gọi Use Case với proper error handling
-          const user = await loginWithGoogleUseCase.execute(idToken);
-          console.log('Use Case execute thành công cho user:', user.fullname);
+          // ✅ THAY ĐỔI: loginWithGoogleUseCase.execute bây giờ trả về chuỗi JWT (String)
+          const jwtToken = await loginWithGoogleUseCase.execute(idToken);
+          console.log('Đăng nhập thành công, nhận được JWT');
 
-          // ✅ FIXED: Lưu user info vào store
-          set({ 
-            loading: false, 
-            user: user, 
+          // Tạm thời set isAuthenticated là true.
+          // Thông tin User sẽ được cập nhật sau khi giải mã JWT hoặc gọi API Profile.
+          set({
+            loading: false,
+            token: jwtToken,
             isAuthenticated: true,
-            error: null 
+            error: null,
           });
           return true;
         } catch (useCaseError: any) {
           console.error('Use Case error:', useCaseError.message);
-          set({ 
-            loading: false, 
-            error: useCaseError.message || 'Lỗi khi xử lý đăng nhập'
+          set({
+            loading: false,
+            error: useCaseError.message || 'Lỗi khi xử lý đăng nhập tại Server',
           });
           return false;
         }
@@ -68,25 +76,17 @@ export const useAuthStore = create<AuthState>(set => ({
     } catch (err: any) {
       console.error('--- Lỗi tại Store (Catch Block) ---');
       console.error('Mã lỗi (code):', err.code);
-      console.error('Thông báo lỗi:', err.message);
-      console.error('Full error object:', JSON.stringify(err, null, 2));
-      
-      // Handle specific Google Sign-In errors
+
       let errorMessage = 'Đăng nhập thất bại';
-      if (err.code === 'SIGN_IN_CANCELLED') {
-        errorMessage = 'Đăng nhập bị hủy';
-      } else if (err.code === 'SIGN_IN_REQUIRED') {
-        errorMessage = 'Cần đăng nhập Google';
-      } else if (err.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
-        errorMessage = 'Google Play Services không khả dụng';
-      } else if (err.code === 10 || err.code === '10') {
-        // DEVELOPER_ERROR - specific message
-        errorMessage = 'Lỗi cấu hình Google OAuth - cần kiểm tra SHA-1 fingerprint';
+      if (err.code === '10' || err.code === 10) {
+        errorMessage =
+          'Lỗi cấu hình Google OAuth (Mã 10) - Kiểm tra SHA-1 và Web Client ID';
+      } else if (err.code === 'SIGN_IN_CANCELLED') {
+        errorMessage = 'Người dùng đã hủy đăng nhập';
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
-      console.error('Final error message:', errorMessage);
+
       set({ loading: false, error: errorMessage });
       return false;
     }
@@ -94,10 +94,11 @@ export const useAuthStore = create<AuthState>(set => ({
   logout: async () => {
     try {
       await GoogleSignin.signOut();
-      set({ 
-        user: null, 
-        isAuthenticated: false, 
-        error: null 
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        error: null,
       });
     } catch (error) {
       console.error('Lỗi khi logout:', error);
