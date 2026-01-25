@@ -1,16 +1,18 @@
 // src/presentation/navigation/RootNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+// Import Screens
+import OnboardingScreen from '../screens/Onboarding_Screen/OnboardingScreen';
+import LoginScreen from '../screens/Auth_Screen/LoginScreen';
+import RegisterScreen from '../screens/Auth_Screen/RegisterScreen';
 import HomeScreen from '../screens/Home_Screen/HomeScreen';
-import MainTabNavigator from './MainTabNavigator'; // Import Tab Navigator mới
+import MainTabNavigator from './MainTabNavigator';
 import HospitalDetailScreen from '../screens/Hospital_Screen/HospitalDetailScreen';
 import ForumDetailScreen from '../screens/Forum_Screen/ForumDetailScreen';
 import SettingsScreen from '../screens/Setting_Screen/SettingsScreen';
 import HealthDetailScreen from '../screens/Dashboard_Screen/HealthDetailScreen';
 import FoodDetailScreen from '../screens/Meal_Screen/FoodDetailScreen';
-import OnboardingScreen from '../screens/Onboarding_Screen/OnboardingScreen';
-import LoginScreen from '../screens/Auth_Screen/LoginScreen';
-import RegisterScreen from '../screens/Auth_Screen/RegisterScreen';
 import HeartRateDetailScreen from '../screens/Dashboard_Screen/HeartRateDetailScreen';
 import HealthSummaryScreen from '../screens/Dashboard_Screen/HealthSummaryScreen';
 import AddFoodScreen from '../screens/Meal_Screen/AddFoodScreen';
@@ -23,11 +25,10 @@ import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
 
 const Stack = createNativeStackNavigator();
 
-interface RootNavigatorProps {
-  initialRouteName?: string;
-}
+const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
+  // ✅ FIXED: Nhận initialRouteName từ AppNavigator, không tự check token
+  // Loại bỏ duplicate logic để tránh race condition
 
-const RootNavigator = ({ initialRouteName = 'Onboarding' }: RootNavigatorProps) => {
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
@@ -36,9 +37,7 @@ const RootNavigator = ({ initialRouteName = 'Onboarding' }: RootNavigatorProps) 
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      
       <Stack.Screen name="Home" component={HomeScreen} />
-      {/* Thay DashboardScreen bằng MainTabNavigator */}
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="HospitalDetail" component={HospitalDetailScreen} />
       <Stack.Screen name="ForumDetail" component={ForumDetailScreen} />
