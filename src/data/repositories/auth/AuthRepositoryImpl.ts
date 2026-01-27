@@ -36,7 +36,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
         throw new Error('Response từ Server không phải là Token hợp lệ');
       }
 
-      console.log('Token nhận được:', jwt.substring(0, 15) + '...');
+      console.log('Token nhận được:', jwt);
       return jwt;
     } catch (error: any) {
       console.error('--- Lỗi tại Repository ---');

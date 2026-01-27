@@ -5,7 +5,6 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { loginWithGoogleUseCase } from '../../di/Container';
 import { User } from '../../domain/entities/User';
-
 interface AuthState {
   user: User | null;
   token: string | null; // Lưu thêm token vào store nếu cần dùng nhanh
@@ -93,13 +92,23 @@ export const useAuthStore = create<AuthState>(set => ({
   },
   logout: async () => {
     try {
+      // 1. Thoát khỏi Google SDK
       await GoogleSignin.signOut();
+
+      // 2. Gọi Repository để xóa token trong AsyncStorage
+      // Bạn có thể inject qua Use Case hoặc gọi trực tiếp repo từ Container
+      const { authRepository } = require('../../di/Container'); // Giả sử repo nằm trong Container
+      await authRepository.logout();
+
+      // 3. Reset state trong Store
       set({
         user: null,
         token: null,
         isAuthenticated: false,
         error: null,
       });
+
+      console.log('Đã đăng xuất hoàn toàn.');
     } catch (error) {
       console.error('Lỗi khi logout:', error);
     }
