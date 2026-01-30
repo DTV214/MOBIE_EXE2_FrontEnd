@@ -1,12 +1,43 @@
 // src/data/repositories/auth/AuthRepositoryImpl.ts
 import axios from 'axios';
 import { IAuthRepository } from '../../../domain/repositories/auth/IAuthRepository';
-// import { User } from '../../../domain/entities/User';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { AccountResponseDTO } from '../../dtos/account/AccountResponseDTO';
+import { User } from '../../../domain/entities/User';
+import axiosInstance from '../../apis/axiosInstance';
 
 export class AuthRepositoryImpl implements IAuthRepository {
-  // ✅ FIXED: Sử dụng callback endpoint theo luồng chuẩn
+  async getProfile(): Promise<User> {
+    try {
+      // 1. Gọi API (axiosInstance đã tự động gắn Token từ interceptor)
+      const response = await axiosInstance.get<AccountResponseDTO>(
+        '/api/accounts/profile',
+      );
+      const dataDTO = response.data; // Dữ liệu thô từ Server
+
+      // 2. Mapping: Biến đổi DTO (Server) -> Entity (App)
+      const userEntity: User = {
+        id: dataDTO.id,
+        email: dataDTO.email,
+
+        // Logic Mapping:
+        fullName: dataDTO.fullname, // Map fullname -> fullName
+        role: dataDTO.role,
+        status: dataDTO.status,
+
+        // Xử lý dữ liệu thiếu: Backend chưa có BMI, gán null
+        bmi: null,
+      };
+
+      // 3. Trả về Entity sạch sẽ cho Domain
+      return userEntity;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // URL Callback (đảm bảo BE của bạn đang chạy đúng port này)
   private apiUrl =
     Platform.OS === 'android'
       ? 'http://10.0.2.2:8080/api/auth/google/android-callback'
@@ -14,41 +45,46 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async loginWithGoogle(idToken: string): Promise<string> {
     try {
-      console.log('--- Step 3: Gọi API Backend ---');
-      // Gửi idToken trong body nếu BE yêu cầu, hoặc Header tùy cấu hình BE
+      console.log(
+        '--- Step 3: Gọi API Backend để đổi ID Token lấy Access Token ---',
+      );
+
+      // Dùng axios thường (không phải instance) để tránh việc interceptor chèn token cũ/rỗng
       const response = await axios.post(
         this.apiUrl,
-        {}, // Body trống
+        {}, // Body
         {
           headers: {
-            Authorization: `Bearer ${idToken}`, // Gửi Token vào đây để BE nhận diện
+            Authorization: `Bearer ${idToken}`, // Gửi Google ID Token
           },
         },
       );
 
-      console.log('--- Step 4: Phản hồi từ Backend ---');
-      console.log('Status:', response.status);
+      console.log('Status Backend:', response.status);
 
-      // Vì BE trả về ResponseEntity<String>, response.data chính là Token
+      // Backend trả về chuỗi Token trực tiếp (ResponseEntity<String>)
       const jwt = response.data;
 
       if (typeof jwt !== 'string' || !jwt) {
         throw new Error('Response từ Server không phải là Token hợp lệ');
       }
 
-      console.log('Token nhận được:', jwt);
+      console.log('JWT nhận được từ Backend:', jwt);
       return jwt;
     } catch (error: any) {
-      console.error('--- Lỗi tại Repository ---');
+      console.error('--- Lỗi tại AuthRepository ---');
       console.error('Chi tiết:', error?.response?.data || error.message);
       throw new Error('Đăng nhập thất bại - vui lòng thử lại');
     }
   }
 
+  // --- TOKEN MANAGEMENT ---
+  // QUAN TRỌNG: Key phải là 'accessToken' để khớp với axiosInstance.ts
+
   async saveToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('user_token', token);
-      console.log('Lưu token thành công!');
+      await AsyncStorage.setItem('accessToken', token); // Đã sửa từ 'user_token' thành 'accessToken'
+      console.log('Lưu accessToken thành công!');
     } catch (e) {
       console.error('Lỗi khi lưu token:', e);
     }
@@ -56,7 +92,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async getToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('user_token');
+      return await AsyncStorage.getItem('accessToken'); // Đã sửa
     } catch (e) {
       console.error('Lỗi khi lấy token:', e);
       return null;
@@ -65,7 +101,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async logout(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('user_token');
+      await AsyncStorage.removeItem('accessToken'); // Đã sửa
       console.log('Đã xóa token đăng nhập.');
     } catch (e) {
       console.error('Lỗi khi xóa token:', e);

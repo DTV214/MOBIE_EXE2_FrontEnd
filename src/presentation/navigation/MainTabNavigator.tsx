@@ -10,16 +10,21 @@ import {
   LayoutList,
 } from 'lucide-react-native';
 import tw from '../../utils/tailwind';
+
+// Import các màn hình
 import DashboardScreen from '../screens/Dashboard_Screen/DashboardScreen';
-import ProfileScreen from '../screens/Setting_Screen/SettingsScreen';
 import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
 import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
 import AIChatListScreen from '../screens/AI_Screen/AIChatListScreen';
 import ForumScreen from '../screens/Forum_Screen/ForumScreen';
 
+// --- SỬA LỖI TẠI ĐÂY ---
+// Trước đây bạn import SettingsScreen, giờ đổi lại thành ProfileScreen chuẩn
+import ProfileScreen from '../screens/Profile_Screen/ProfileScreen';
+
 const Tab = createBottomTabNavigator();
 
-// --- TÁCH HÀM NÀY RA NGOÀI ĐỂ TRÁNH WARNING ---
+// Tách hàm render icon để code gọn gàng
 const renderTabBarIcon =
   (routeName: string) =>
   ({ color, size }: { color: string; size: number }) => {
@@ -46,11 +51,10 @@ const MainTabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#7FB069', // Màu primary mới từ Figma
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: '#7FB069', // Màu xanh chủ đạo
+        tabBarInactiveTintColor: '#9CA3AF', // Màu xám
         tabBarStyle: tw`bg-white border-t border-gray-100 h-16 pb-2 pt-2 shadow-lg`,
         tabBarLabelStyle: tw`text-[10px] font-medium`,
-        // --- SỬ DỤNG HÀM ĐÃ TÁCH ---
         tabBarIcon: renderTabBarIcon(route.name),
       })}
     >
@@ -59,6 +63,7 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} />
       <Tab.Screen name="Diễn đàn" component={ForumScreen} />
       <Tab.Screen name="AI" component={AIChatListScreen} />
+      {/* Tab này giờ sẽ hiển thị đúng ProfileScreen (có BMI, tên user) */}
       <Tab.Screen name="Hồ sơ" component={ProfileScreen} />
     </Tab.Navigator>
   );
