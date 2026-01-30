@@ -85,3 +85,6 @@ export const getPaymentMethodsUseCase = new GetPaymentMethods(subscriptionReposi
 export const processPaymentUseCase = new ProcessPayment(subscriptionRepository);
 export const getTransactionByIdUseCase = new GetTransactionById(subscriptionRepository);
 export const loginWithGoogleUseCase = new LoginWithGoogle(authRepository);
+
+// Export authRepository for direct access
+export { authRepository };

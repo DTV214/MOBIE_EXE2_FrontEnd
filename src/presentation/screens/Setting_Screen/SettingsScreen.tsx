@@ -39,7 +39,7 @@ const SettingsScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mr-4`}>
           <ChevronLeft size={24} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={tw`text-xl font-bold text-dark`}>Cài đặt</Text>
+        <Text style={tw`text-xl font-bold text-gray-900`}>Cài đặt</Text>
       </View>
 
       <ScrollView
@@ -82,7 +82,7 @@ const SettingsScreen = () => {
               <View style={tw`bg-gray-100 p-2 rounded-xl mr-3`}>
                 <Moon size={20} color="#6B7280" />
               </View>
-              <Text style={tw`text-base font-medium text-dark`}>
+              <Text style={tw`text-base font-medium text-gray-900`}>
                 Chế độ tối
               </Text>
             </View>
@@ -121,7 +121,7 @@ const SettingItem = ({ icon, title, border = true }: any) => (
   >
     <View style={tw`flex-row items-center`}>
       <View style={tw`bg-primaryLight p-2 rounded-xl mr-3`}>{icon}</View>
-      <Text style={tw`text-base font-medium text-dark`}>{title}</Text>
+      <Text style={tw`text-base font-medium text-gray-900`}>{title}</Text>
     </View>
     <ChevronRight size={18} color="#9CA3AF" />
   </TouchableOpacity>
