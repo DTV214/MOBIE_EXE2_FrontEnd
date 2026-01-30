@@ -1,4 +1,5 @@
 // src/presentation/navigation/RootNavigator.tsx
+
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -7,7 +8,7 @@ import OnboardingScreen from '../screens/Onboarding_Screen/OnboardingScreen';
 import LoginScreen from '../screens/Auth_Screen/LoginScreen';
 import RegisterScreen from '../screens/Auth_Screen/RegisterScreen';
 import HomeScreen from '../screens/Home_Screen/HomeScreen';
-import MainTabNavigator from './MainTabNavigator'; // Tab chứa Dashboard & Profile
+import MainTabNavigator from './MainTabNavigator';
 import HospitalDetailScreen from '../screens/Hospital_Screen/HospitalDetailScreen';
 import ForumDetailScreen from '../screens/Forum_Screen/ForumDetailScreen';
 import SettingsScreen from '../screens/Setting_Screen/SettingsScreen';
@@ -22,6 +23,9 @@ import PaymentMethodScreen from '../screens/Subscription_Screen/PaymentMethodScr
 import ConfirmPaymentScreen from '../screens/Subscription_Screen/ConfirmPaymentScreen';
 import PaymentSuccessScreen from '../screens/Subscription_Screen/PaymentSuccessScreen';
 import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
+import EditProfileScreen from '../screens/Profile_Screen/EditProfileScreen';
+// ✅ MỚI: Import màn hình khảo sát
+import SurveyScreen from '../screens/Survey_Screen/SurveyScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,16 +40,15 @@ const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
 
-      {/* Landing Page (Optional) */}
+      {/* ✅ MỚI: Thêm màn hình Survey vào Stack */}
+      <Stack.Screen name="Survey" component={SurveyScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      {/* Main Flow */}
       <Stack.Screen name="Home" component={HomeScreen} />
-
-      {/* Main App Flow (Bottom Tabs) */}
       <Stack.Screen name="Main" component={MainTabNavigator} />
 
-      {/* Sub-screens (Nằm đè lên Tab Bar) */}
+      {/* Sub-screens */}
       <Stack.Screen name="Settings" component={SettingsScreen} />
-
-      {/* Các màn hình chi tiết khác */}
       <Stack.Screen name="HospitalDetail" component={HospitalDetailScreen} />
       <Stack.Screen name="ForumDetail" component={ForumDetailScreen} />
       <Stack.Screen name="HealthDetail" component={HealthDetailScreen} />

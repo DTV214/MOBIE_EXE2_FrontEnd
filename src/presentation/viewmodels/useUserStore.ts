@@ -1,52 +1,70 @@
 // src/presentation/viewmodels/useUserStore.ts
 import { create } from 'zustand';
-import { AuthRepositoryImpl } from '../../data/repositories/auth/AuthRepositoryImpl';
-import { GetAccountProfile } from '../../domain/usecases/auth/GetAccountProfile';
 import { User } from '../../domain/entities/User';
+import { HealthProfile } from '../../domain/entities/HealthProfile'; // Import mới
+import { GetAccountProfile } from '../../domain/usecases/auth/GetAccountProfile';
+import { AuthRepositoryImpl } from '../../data/repositories/auth/AuthRepositoryImpl';
+import { HealthProfileRepositoryImpl } from '../../data/repositories/health/HealthProfileRepositoryImpl'; // Import mới
+import { GetPersonalHealthProfile } from '../../domain/usecases/health/GetPersonalHealthProfile'; // Import mới
 
-// --- PHẦN 1: DEPENDENCY INJECTION (Khởi tạo các lớp bên dưới) ---
-// Tạo Repository (Data Layer)
-const authRepository = new AuthRepositoryImpl();
-// Tạo UseCase (Domain Layer) và đưa Repository vào
-const getAccountProfileUseCase = new GetAccountProfile(authRepository);
+// Dependency Injection
+const authRepo = new AuthRepositoryImpl();
+const getAccountProfileUseCase = new GetAccountProfile(authRepo);
+
+// ✅ Setup Health UseCase
+const healthRepo = new HealthProfileRepositoryImpl();
+const getHealthProfileUseCase = new GetPersonalHealthProfile(healthRepo);
 
 interface UserState {
   user: User | null;
+  healthProfile: HealthProfile | null; // ✅ MỚI: State lưu hồ sơ sức khỏe
   loading: boolean;
   error: string | null;
 
-  // Actions
   fetchUserProfile: () => Promise<void>;
-  logout: () => Promise<void>;
+  fetchHealthData: () => Promise<void>; // ✅ MỚI: Hàm riêng để lấy data sức khỏe
+  clearUser: () => void;
 }
 
-export const useUserStore = create<UserState>(set => ({
+export const useUserStore = create<UserState>((set, get) => ({
   user: null,
+  healthProfile: null,
   loading: false,
   error: null,
 
-  // Hàm 1: Lấy thông tin Profile
   fetchUserProfile: async () => {
     set({ loading: true, error: null });
     try {
-      console.log('ViewModel: Đang gọi UseCase lấy profile...');
-      // Gọi UseCase -> UseCase gọi Repository -> Repository gọi API
+      // 1. Lấy thông tin tài khoản (Account)
       const user = await getAccountProfileUseCase.execute();
+      set({ user });
 
-      console.log('ViewModel: Lấy profile thành công:', user.email);
-      set({ user, loading: false });
+      // 2. Nếu User đã có hồ sơ sức khỏe -> Gọi luôn hàm lấy Health Profile
+      if (user.hasHealthProfile) {
+        await get().fetchHealthData();
+      } else {
+        set({ loading: false }); // Nếu không có thì dừng loading
+      }
     } catch (error: any) {
-      console.error('ViewModel Error:', error);
+      console.error('Error fetching profile:', error);
       set({
         loading: false,
-        error: error.message || 'Không thể tải thông tin người dùng',
+        error: error.message || 'Không thể tải thông tin cá nhân',
       });
     }
   },
 
-  // Hàm 2: Đăng xuất
-  logout: async () => {
-    await authRepository.logout(); // Xóa token trong AsyncStorage
-    set({ user: null, error: null }); // Xóa data trong State
+  // ✅ Hàm mới chuyên để lấy Health Profile
+  fetchHealthData: async () => {
+    try {
+      const profile = await getHealthProfileUseCase.execute();
+      set({ healthProfile: profile, loading: false }); // Update xong thì tắt loading
+    } catch (error) {
+      console.error('Lỗi lấy Health Profile:', error);
+      // Không set error global để tránh chặn UI chính, chỉ log ra console hoặc set null
+      set({ healthProfile: null, loading: false });
+    }
   },
+
+  clearUser: () => set({ user: null, healthProfile: null }),
 }));

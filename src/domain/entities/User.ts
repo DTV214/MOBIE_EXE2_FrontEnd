@@ -7,5 +7,7 @@ export interface User {
   role: string; // Ví dụ: "USER", "ADMIN"
   status: string; // Ví dụ: "ACTIVE"
   avatar?: string; // Có thể mở rộng sau này
-  bmi?: number | null; // Optional: Vì API Account hiện tại chưa trả về, ta để null
+  bmi?: number | null; // Optional: Vì API Account hiện tại chưa trả về, ta để null\
+  // ✅ MỚI: Cờ kiểm tra đã có hồ sơ sức khỏe chưa
+  hasHealthProfile: boolean;
 }
