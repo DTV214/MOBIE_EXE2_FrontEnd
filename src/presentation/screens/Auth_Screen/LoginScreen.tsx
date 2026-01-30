@@ -1,4 +1,5 @@
 // src/presentation/screens/Auth_Screen/LoginScreen.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -9,69 +10,112 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Leaf } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { useAuthStore } from '../../viewmodels/useAuthStore';
 import Toast from 'react-native-toast-message';
-import { ActivityIndicator } from 'react-native';
+
+// Import ViewModels
+import { useAuthStore } from '../../viewmodels/useAuthStore';
+import { useUserStore } from '../../viewmodels/useUserStore';
+
 const LoginScreen = () => {
+  const navigation = useNavigation<any>();
+
+  // Local State cho Form đăng nhập thường
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigation = useNavigation<any>();
 
-  const handleLogin = () => {
-    // TODO: Implement login logic với API
-    // Hiện tại chỉ điều hướng vào trang Main
-    navigation.replace('Main');
-  };
+  // Lấy Actions từ Store
+  const {
+    loginWithGoogle,
+    loading: authLoading,
+    error: authError,
+  } = useAuthStore();
+  const { fetchUserProfile } = useUserStore();
 
-// useEffect để cấu hình Google
-useEffect(() => {
-  GoogleSignin.configure({
-    // ✅ UPDATED: Web Client ID từ Firebase OAuth
-    webClientId:
-      '572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com',
-    offlineAccess: true,
-    forceCodeForRefreshToken: true,
-    scopes: ['profile', 'email'],
-  });
-}, []);
+  // Cấu hình Google Signin khi màn hình mount
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId:
+        '572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com',
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
+      scopes: ['profile', 'email'],
+    });
+  }, []);
 
-  const { loginWithGoogle, loading, error } = useAuthStore();
-
+  // Xử lý Đăng nhập Google (Luồng chính)
   const handleGoogleLogin = async () => {
-    console.log('--- Step 1: Click nút Google Login ---');
-    
     try {
+      // 1. Gọi API đăng nhập Google & lấy Token
       const success = await loginWithGoogle();
-      console.log('--- Step 5: Kết quả cuối cùng tại Screen ---', success);
 
       if (success) {
-        navigation.replace('Main');
-      } else if (error) {
-        console.error('Lỗi hiển thị Toast:', error);
-        Toast.show({ 
-          type: 'error', 
-          text1: 'Lỗi đăng nhập', 
-          text2: error,
-          visibilityTime: 4000
-        });
+        // 2. Nếu có token, gọi ngay API lấy thông tin User để kiểm tra Profile
+        await fetchUserProfile();
+
+        // Lấy state user mới nhất trực tiếp từ store
+        const currentUser = useUserStore.getState().user;
+
+        // 3. Phân luồng điều hướng
+        if (currentUser?.hasHealthProfile) {
+          // Case 1: Đã có hồ sơ -> Vào thẳng Dashboard
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+          Toast.show({
+            type: 'success',
+            text1: 'Đăng nhập thành công',
+            text2: `Chào mừng ${currentUser.fullName} quay trở lại! 👋`,
+          });
+        } else {
+          // Case 2: Chưa có hồ sơ -> Vào trang Khảo sát
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Survey' }],
+          });
+          Toast.show({
+            type: 'info',
+            text1: 'Chào mừng thành viên mới',
+            text2: 'Hãy thiết lập hồ sơ sức khỏe để bắt đầu nhé!',
+          });
+        }
+      } else {
+        // Xử lý khi loginWithGoogle trả về false (hoặc user hủy)
+        if (authError) {
+          Toast.show({
+            type: 'error',
+            text1: 'Đăng nhập thất bại',
+            text2: authError,
+          });
+        }
       }
-    } catch (screenError: any) {
-      console.error('Unexpected error in LoginScreen:', screenError);
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Lỗi', 
-        text2: 'Có lỗi không mong muốn xảy ra',
-        visibilityTime: 4000
+    } catch (error: any) {
+      console.error('Login Error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Lỗi hệ thống',
+        text2: 'Vui lòng thử lại sau.',
       });
     }
   };
+
+  // Placeholder cho đăng nhập thường (Chưa có API)
+  const handleLogin = () => {
+    Toast.show({
+      type: 'info',
+      text1: 'Tính năng đang phát triển',
+      text2: 'Vui lòng sử dụng Đăng nhập bằng Google.',
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -102,7 +146,8 @@ useEffect(() => {
           <Text style={tw`text-base text-textSub mb-10`}>
             Tiếp tục cùng sống khỏe, sống bình tĩnh
           </Text>
-          {/* Input Fields */}
+
+          {/* Input Fields (Đăng nhập thường) */}
           <View style={tw`mb-6`}>
             {/* Email */}
             <View
@@ -161,7 +206,8 @@ useEffect(() => {
               </Text>
             </TouchableOpacity>
           </View>
-          {/* Login Button */}
+
+          {/* Login Button (Manual) */}
           <TouchableOpacity onPress={handleLogin} activeOpacity={0.9}>
             <LinearGradient
               colors={['#7FB069', '#6A9A5A']}
@@ -175,33 +221,40 @@ useEffect(() => {
               <ArrowRight size={20} color="#FFFFFF" />
             </LinearGradient>
           </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={tw`flex-row items-center mb-6`}>
+            <View style={tw`flex-1 h-[1px] bg-gray-200`} />
+            <Text style={tw`mx-4 text-gray-400 text-xs`}>
+              HOẶC ĐĂNG NHẬP VỚI
+            </Text>
+            <View style={tw`flex-1 h-[1px] bg-gray-200`} />
+          </View>
+
+          {/* Google Login Button */}
+          <View style={tw`items-center pb-10`}>
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              disabled={authLoading}
+              style={tw`w-16 h-16 bg-white rounded-2xl items-center justify-center border border-gray-200 shadow-sm ${
+                authLoading ? 'opacity-50' : ''
+              }`}
+            >
+              {authLoading ? (
+                <ActivityIndicator color="#EA4335" />
+              ) : (
+                // Logo Google chữ G cách điệu
+                <Text style={tw`text-3xl font-bold text-red-500`}>G</Text>
+              )}
+            </TouchableOpacity>
+            <Text style={tw`text-gray-400 text-xs mt-2`}>Google</Text>
+          </View>
+
           {/* Register Footer */}
           <View style={tw`flex-row justify-center pb-10`}>
             <Text style={tw`text-textSub`}>Chưa có tài khoản? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
               <Text style={tw`text-primary font-bold`}>Đăng ký</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={tw`flex-row items-center my-6`}>
-            <View style={tw`flex-1 h-[1px] bg-gray-200`} />
-            <Text style={tw`mx-4 text-gray-400 text-xs`}>HOẶC</Text>
-            <View style={tw`flex-1 h-[1px] bg-gray-200`} />
-          </View>
-
-          {/* Google Login Button */}
-          <View style={tw`items-center`}>
-            <TouchableOpacity
-              onPress={handleGoogleLogin}
-              disabled={loading}
-              style={tw`w-14 h-14 bg-white rounded-2xl items-center justify-center border border-gray-200 shadow-sm ${
-                loading ? 'opacity-50' : ''
-              }`}
-            >
-              {loading ? (
-                <ActivityIndicator color="#22C55E" />
-              ) : (
-                <Text style={tw`text-2xl font-bold text-red-500`}>G</Text>
-              )}
             </TouchableOpacity>
           </View>
         </View>

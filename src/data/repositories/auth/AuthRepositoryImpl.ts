@@ -3,18 +3,18 @@ import axios from 'axios';
 import { IAuthRepository } from '../../../domain/repositories/auth/IAuthRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { AccountResponseDTO } from '../../dtos/account/AccountResponseDTO';
+import { AccountResponseDTO } from '../../dtos/account/AccountResponseDTO'; // Import DTO chuẩn
 import { User } from '../../../domain/entities/User';
 import axiosInstance from '../../apis/axiosInstance';
 
 export class AuthRepositoryImpl implements IAuthRepository {
   async getProfile(): Promise<User> {
     try {
-      // 1. Gọi API (axiosInstance đã tự động gắn Token từ interceptor)
+      // 1. Gọi API (Dùng DTO chuẩn để hứng data)
       const response = await axiosInstance.get<AccountResponseDTO>(
         '/api/accounts/profile',
       );
-      const dataDTO = response.data; // Dữ liệu thô từ Server
+      const dataDTO = response.data; // Đây là dữ liệu thô từ Server (AccountResponseDTO)
 
       // 2. Mapping: Biến đổi DTO (Server) -> Entity (App)
       const userEntity: User = {
@@ -25,6 +25,10 @@ export class AuthRepositoryImpl implements IAuthRepository {
         fullName: dataDTO.fullname, // Map fullname -> fullName
         role: dataDTO.role,
         status: dataDTO.status,
+
+        // ✅ QUAN TRỌNG: Map cờ kiểm tra hồ sơ sức khỏe
+        // Backend (isHaveHealthProfile) -> Frontend Entity (hasHealthProfile)
+        hasHealthProfile: dataDTO.isHaveHealthProfile,
 
         // Xử lý dữ liệu thiếu: Backend chưa có BMI, gán null
         bmi: null,
@@ -110,7 +114,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async saveToken(token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem('accessToken', token); // Đã sửa từ 'user_token' thành 'accessToken'
+      await AsyncStorage.setItem('accessToken', token);
       console.log('Lưu accessToken thành công!');
     } catch (e) {
       console.error('Lỗi khi lưu token:', e);
@@ -119,7 +123,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async getToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('accessToken'); // Đã sửa
+      return await AsyncStorage.getItem('accessToken');
     } catch (e) {
       console.error('Lỗi khi lấy token:', e);
       return null;
@@ -128,7 +132,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
   async logout(): Promise<void> {
     try {
-      await AsyncStorage.removeItem('accessToken'); // Đã sửa
+      await AsyncStorage.removeItem('accessToken');
       console.log('Đã xóa token đăng nhập.');
     } catch (e) {
       console.error('Lỗi khi xóa token:', e);
