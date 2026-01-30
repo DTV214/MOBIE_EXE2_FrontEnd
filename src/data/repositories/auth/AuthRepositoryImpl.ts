@@ -73,8 +73,35 @@ export class AuthRepositoryImpl implements IAuthRepository {
       return jwt;
     } catch (error: any) {
       console.error('--- Lỗi tại AuthRepository ---');
-      console.error('Chi tiết:', error?.response?.data || error.message);
-      throw new Error('Đăng nhập thất bại - vui lòng thử lại');
+      
+      // Log chi tiết lỗi để debug
+      if (error?.response) {
+        console.error('Status:', error.response.status);
+        console.error('Data:', error.response.data);
+        console.error('Headers:', error.response.headers);
+      } else {
+        console.error('Chi tiết:', error?.message || 'Unknown error');
+      }
+      
+      // Xử lý các loại lỗi cụ thể
+      let errorMessage = 'Đăng nhập thất bại - vui lòng thử lại';
+      
+      if (error?.response?.status === 500) {
+        const responseData = error.response.data;
+        if (responseData?.message?.includes('password')) {
+          errorMessage = 'Lỗi cơ sở dữ liệu - Backend cần fix constraint password field';
+        } else if (responseData?.message?.includes('could not execute statement')) {
+          errorMessage = 'Lỗi database constraint - Backend cần xử lý nullable fields';
+        } else {
+          errorMessage = 'Lỗi server nội bộ - Backend team cần kiểm tra logs';
+        }
+      } else if (error?.response?.status === 401) {
+        errorMessage = 'Google token không hợp lệ hoặc đã hết hạn';
+      } else if (error?.response?.status === 400) {
+        errorMessage = 'Request không đúng định dạng';
+      }
+      
+      throw new Error(errorMessage);
     }
   }
 
