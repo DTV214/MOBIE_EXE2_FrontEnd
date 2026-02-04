@@ -41,6 +41,15 @@ import { GetTransactionById } from '../domain/usecases/GetTransactionById';
 
 import { AuthRepositoryImpl } from '../data/repositories/auth/AuthRepositoryImpl';
 import { LoginWithGoogle } from '../domain/usecases/auth/LoginWithGoogle';
+
+// NEW: Hospital & Medical Specialty imports
+import { HospitalRepositoryImpl } from '../data/repositories/hospital/HospitalRepositoryImpl';
+import { MedicalSpecialtyRepositoryImpl } from '../data/repositories/specialty/MedicalSpecialtyRepositoryImpl';
+import { GetAllHospitals } from '../domain/usecases/hospital/GetAllHospitals';
+import { GetHospitalDetail } from '../domain/usecases/hospital/GetHospitalDetail';
+import { GetHospitalsBySpecialty } from '../domain/usecases/hospital/GetHospitalsBySpecialty';
+import { GetHospitalSpecialties } from '../domain/usecases/specialty/GetHospitalSpecialties';
+import { GetSpecialtyDetail } from '../domain/usecases/specialty/GetSpecialtyDetail';
 // Repositories - Sau này có API thật thì chỉ cần đổi dòng này là xong
 const userRepository = new MockUserRepository();
 const storageRepository = new StorageRepository();
@@ -51,6 +60,10 @@ const chatRepository = new MockChatRepository();
 const hospitalRepository = new MockHospitalRepository();
 const subscriptionRepository = new MockSubscriptionRepository();
 const authRepository = new AuthRepositoryImpl();
+
+// NEW: Real API repositories
+const hospitalNewRepository = new HospitalRepositoryImpl();
+const medicalSpecialtyRepository = new MedicalSpecialtyRepositoryImpl();
 // Use Cases
 export const getUserProfileUseCase = new GetUserProfile(userRepository);
 export const checkOnboardingStatusUseCase = new CheckOnboardingStatus(storageRepository);
@@ -85,3 +98,13 @@ export const getPaymentMethodsUseCase = new GetPaymentMethods(subscriptionReposi
 export const processPaymentUseCase = new ProcessPayment(subscriptionRepository);
 export const getTransactionByIdUseCase = new GetTransactionById(subscriptionRepository);
 export const loginWithGoogleUseCase = new LoginWithGoogle(authRepository);
+
+// NEW: Hospital & Medical Specialty Use Cases  
+export const getAllHospitalsUseCase = new GetAllHospitals(hospitalNewRepository);
+export const getHospitalDetailUseCase = new GetHospitalDetail(hospitalNewRepository);
+export const getHospitalsBySpecialtyUseCase = new GetHospitalsBySpecialty(hospitalNewRepository);
+export const getHospitalSpecialtiesUseCase = new GetHospitalSpecialties(medicalSpecialtyRepository);
+export const getSpecialtyDetailUseCase = new GetSpecialtyDetail(medicalSpecialtyRepository);
+
+// Export authRepository for direct access
+export { authRepository };
