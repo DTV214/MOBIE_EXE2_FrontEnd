@@ -8,6 +8,7 @@ import {
   Bot,
   User,
   LayoutList,
+  Book,
 } from 'lucide-react-native';
 import tw from '../../utils/tailwind';
 
@@ -17,6 +18,7 @@ import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
 import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
 import AIChatListScreen from '../screens/AI_Screen/AIChatListScreen';
 import ForumScreen from '../screens/Forum_Screen/ForumScreen';
+import DailyLogScreen from '../screens/Tracking_Daily_Screen/DailyLogScreen';
 
 // --- SỬA LỖI TẠI ĐÂY ---
 // Trước đây bạn import SettingsScreen, giờ đổi lại thành ProfileScreen chuẩn
@@ -41,6 +43,8 @@ const renderTabBarIcon =
         return <Bot size={size} color={color} />;
       case 'Hồ sơ':
         return <User size={size} color={color} />;
+      case 'Nhật ký':
+        return <Book size={size} color={color} />;
       default:
         return null;
     }
@@ -61,6 +65,7 @@ const MainTabNavigator = () => {
       <Tab.Screen name="Trang chủ" component={DashboardScreen} />
       <Tab.Screen name="Bệnh viện" component={HospitalSearchScreen} />
       <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} />
+      <Tab.Screen name="Nhật ký" component={DailyLogScreen} />
       <Tab.Screen name="Diễn đàn" component={ForumScreen} />
       <Tab.Screen name="AI" component={AIChatListScreen} />
       {/* Tab này giờ sẽ hiển thị đúng ProfileScreen (có BMI, tên user) */}

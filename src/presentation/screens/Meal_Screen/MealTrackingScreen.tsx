@@ -1,361 +1,201 @@
-// src/presentation/screens/Meal_Screen/MealTrackingScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, {  useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
+  SafeAreaView,
   StatusBar,
-  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
+import { useDailyLogStore } from '../../viewmodels/useDailyLogStore';
 import {
-  Bell,
-  Flame,
+  ChevronLeft,
   Plus,
-  X,
-  ChevronDown,
-  Lightbulb,
+  Trash2,
+  Utensils,
+
+  Flame,
+  Zap,
 } from 'lucide-react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import {
-  getDailyMealUseCase,
-  removeMealItemUseCase,
-} from '../../../di/Container';
-import { DailyMeal, MealItem } from '../../../domain/entities/Food';
 
 const MealTrackingScreen = () => {
   const navigation = useNavigation<any>();
-  const [dailyMeal, setDailyMeal] = useState<DailyMeal | null>(null);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0],
-  );
-  const [loading, setLoading] = useState(true);
+  const route = useRoute<any>();
 
-  useEffect(() => {
-    loadDailyMeal();
-  }, [selectedDate]);
+  // Lấy tham số từ DailyLogScreen
+  const { date, type, mealLogId } = route.params;
 
-  const loadDailyMeal = async () => {
-    try {
-      const meal = await getDailyMealUseCase.execute(selectedDate);
-      setDailyMeal(meal);
-    } catch (error) {
-      console.error('Error loading daily meal:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { mealLogs, isLoading } = useDailyLogStore();
 
-  const handleRemoveItem = async (itemId: string) => {
-    try {
-      await removeMealItemUseCase.execute(itemId);
-      await loadDailyMeal(); // Reload data
-    } catch (error) {
-      console.error('Error removing meal item:', error);
-    }
-  };
+  // Tìm dữ liệu của bữa ăn hiện tại từ Store
+  const currentMeal = useMemo(() => {
+    return mealLogs.find(m => m.id === mealLogId);
+  }, [mealLogs, mealLogId]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const getMealTimeLabel = (mealTime: string) => {
-    switch (mealTime) {
-      case 'breakfast':
-        return 'Sáng';
-      case 'lunch':
-        return 'Trưa';
-      case 'dinner':
-        return 'Tối';
+  const getMealTitle = () => {
+    switch (type) {
+      case 'BREAKFAST':
+        return 'Bữa Sáng';
+      case 'LUNCH':
+        return 'Bữa Trưa';
+      case 'DINNER':
+        return 'Bữa Tối';
       default:
-        return mealTime;
+        return 'Bữa Ăn';
     }
   };
 
-  const getMealTimeIcon = (mealTime: string) => {
-    switch (mealTime) {
-      case 'breakfast':
-        return '🌅';
-      case 'lunch':
-        return '☀️';
-      case 'dinner':
-        return '🌙';
-      default:
-        return '🍽️';
-    }
-  };
-
-  if (loading || !dailyMeal) {
+  if (isLoading) {
     return (
-      <View style={tw`flex-1 bg-background items-center justify-center`}>
-        <Text style={tw`text-textSub`}>Đang tải...</Text>
+      <View style={tw`flex-1 justify-center items-center bg-white`}>
+        <ActivityIndicator size="large" color="#7FB069" />
       </View>
     );
   }
 
-  const progressPercentage = Math.min(
-    (dailyMeal.totalCalories / dailyMeal.dailyGoal) * 100,
-    100,
-  );
-
   return (
-    <View style={tw`flex-1 bg-background`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={tw`flex-1 bg-white`}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-100`}>
-        <View style={tw`flex-row justify-between items-center mb-4`}>
-          <View>
-            <Text style={tw`text-xs text-primary font-bold mb-1`}>LÀNH CARE</Text>
-            <Text style={tw`text-xl font-bold text-brandDark`}>
-              Bữa ăn hôm nay
-            </Text>
-          </View>
-          <TouchableOpacity style={tw`p-2`}>
-            <Bell size={22} color="#1F2937" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Streak */}
-        {dailyMeal.streak && dailyMeal.streak > 0 && (
-          <View style={tw`flex-row items-center mb-3`}>
-            <Flame size={16} color="#F97316" />
-            <Text style={tw`text-textSub text-sm ml-2`}>
-              Chuỗi {dailyMeal.streak} ngày
-            </Text>
-          </View>
-        )}
-
-        {/* Date Picker */}
+      {/* Custom Header */}
+      <View
+        style={tw`px-6 py-4 flex-row items-center justify-between border-b border-gray-50`}
+      >
         <TouchableOpacity
-          style={tw`flex-row items-center bg-gray-50 rounded-xl px-4 py-2 self-start`}
+          onPress={() => navigation.goBack()}
+          style={tw`p-2 bg-gray-50 rounded-xl`}
         >
-          <Text style={tw`text-brandDark font-semibold text-sm`}>
-            {formatDate(selectedDate)}
-          </Text>
-          <ChevronDown size={16} color="#6B7280" style={tw`ml-2`} />
+          <ChevronLeft size={24} color="#1F2937" />
         </TouchableOpacity>
+        <Text style={tw`text-lg font-black text-brandDark`}>
+          {getMealTitle()}
+        </Text>
+        <View style={tw`w-10 h-10`} /> {/* Khoảng trống cân bằng */}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
+      <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
         <View style={tw`px-6 pt-6`}>
-          {/* Meal Sections */}
-          <MealSection
-            title="Sáng"
-            time="7:30 AM"
-            items={dailyMeal.breakfast}
-            onAddPress={() =>
-              navigation.navigate('AddFood', { mealTime: 'breakfast', date: selectedDate })
-            }
-            onItemPress={(item: MealItem) =>
-              navigation.navigate('FoodDetail', { foodId: item.food.id })
-            }
-            onRemoveItem={handleRemoveItem}
-          />
+          {/* Summary Card */}
+          <LinearGradient
+            colors={['#7FB069', '#6A9A5A']}
+            style={tw`p-6 rounded-[32px] shadow-lg mb-8`}
+          >
+            <View style={tw`flex-row justify-between items-center`}>
+              <View>
+                <Text
+                  style={tw`text-white/80 text-xs font-bold uppercase mb-1`}
+                >
+                  Tổng Năng Lượng
+                </Text>
+                <Text style={tw`text-white text-3xl font-black`}>
+                  {currentMeal?.totalCalories || 0}{' '}
+                  <Text style={tw`text-lg font-medium`}>kcal</Text>
+                </Text>
+              </View>
+              <View style={tw`bg-white/20 p-4 rounded-2xl`}>
+                <Flame size={32} color="white" />
+              </View>
+            </View>
 
-          <MealSection
-            title="Trưa"
-            time="12:30 PM"
-            items={dailyMeal.lunch}
-            onAddPress={() =>
-              navigation.navigate('AddFood', { mealTime: 'lunch', date: selectedDate })
-            }
-            onItemPress={(item: MealItem) =>
-              navigation.navigate('FoodDetail', { foodId: item.food.id })
-            }
-            onRemoveItem={handleRemoveItem}
-          />
+            <View
+              style={tw`flex-row justify-between mt-6 pt-6 border-t border-white/20`}
+            >
+              <NutrientInfo label="P" value={currentMeal?.totalProtein || 0} />
+              <NutrientInfo label="C" value={currentMeal?.totalCarbs || 0} />
+              <NutrientInfo label="F" value={currentMeal?.totalFat || 0} />
+            </View>
+          </LinearGradient>
 
-          <MealSection
-            title="Tối"
-            time="7:00 PM"
-            items={dailyMeal.dinner}
-            onAddPress={() =>
-              navigation.navigate('AddFood', { mealTime: 'dinner', date: selectedDate })
-            }
-            onItemPress={(item: MealItem) =>
-              navigation.navigate('FoodDetail', { foodId: item.food.id })
-            }
-            onRemoveItem={handleRemoveItem}
-          />
-
-          {/* Daily Summary */}
-          <View style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
-              Tổng kết hằng ngày
+          {/* Food List Section */}
+          <View style={tw`flex-row justify-between items-center mb-4`}>
+            <Text style={tw`text-lg font-black text-brandDark`}>
+              Món đã chọn
             </Text>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate('AddFood', { mealLogId, type, date })
+              }
+              style={tw`bg-primary/10 px-4 py-2 rounded-full flex-row items-center`}
+            >
+              <Plus size={16} color="#7FB069" />
+              <Text style={tw`ml-1 text-primary font-bold text-xs`}>
+                Thêm món
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-            <View style={tw`mb-4`}>
-              <View style={tw`flex-row justify-between items-center mb-2`}>
-                <Text style={tw`text-textSub text-sm`}>
-                  Mục tiêu: {dailyMeal.dailyGoal.toLocaleString()} kcal
-                </Text>
-                <Text style={tw`text-brandDark font-bold text-lg`}>
-                  {dailyMeal.totalCalories.toLocaleString()} kcal
-                </Text>
-              </View>
-
-              {/* Progress Bar */}
-              <View style={tw`w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2`}>
-                <View
-                  style={[
-                    tw`h-full bg-primary rounded-full`,
-                    { width: `${progressPercentage}%` },
-                  ]}
-                />
-              </View>
-
-              <Text style={tw`text-primary font-semibold text-sm`}>
-                {dailyMeal.remainingCalories > 0
-                  ? `${dailyMeal.remainingCalories.toLocaleString()} kcal còn lại`
-                  : `Vượt ${Math.abs(dailyMeal.remainingCalories).toLocaleString()} kcal`}
+          {!currentMeal?.items || currentMeal.items.length === 0 ? (
+            <View
+              style={tw`bg-gray-50 rounded-[24px] p-10 items-center border border-dashed border-gray-200`}
+            >
+              <Utensils size={40} color="#9CA3AF" strokeWidth={1.5} />
+              <Text style={tw`text-gray-400 font-medium mt-4 text-center`}>
+                Chưa có món ăn nào.{'\n'}Hãy nhấn "Thêm món" để bắt đầu.
               </Text>
             </View>
+          ) : (
+            currentMeal.items.map((item: any, index: number) => (
+              <FoodItemCard key={index} item={item} />
+            ))
+          )}
 
-            {/* Macronutrients */}
-            <View style={tw`flex-row justify-between pt-4 border-t border-gray-100`}>
-              <View>
-                <Text style={tw`text-textSub text-xs mb-1`}>Protein</Text>
-                <Text style={tw`text-brandDark font-bold`}>
-                  {Math.round(dailyMeal.totalProtein)}g
-                </Text>
-              </View>
-              <View>
-                <Text style={tw`text-textSub text-xs mb-1`}>Carbs</Text>
-                <Text style={tw`text-brandDark font-bold`}>
-                  {Math.round(dailyMeal.totalCarbs)}g
-                </Text>
-              </View>
-              <View>
-                <Text style={tw`text-textSub text-xs mb-1`}>Fat</Text>
-                <Text style={tw`text-brandDark font-bold`}>
-                  {Math.round(dailyMeal.totalFat)}g
-                </Text>
-              </View>
+          {/* AI Advice Section */}
+          <View
+            style={tw`mt-8 p-5 bg-blue-50 rounded-[24px] border border-blue-100 flex-row`}
+          >
+            <Zap size={20} color="#3B82F6" />
+            <View style={tw`ml-3 flex-1`}>
+              <Text style={tw`text-blue-800 font-bold mb-1`}>
+                Gợi ý từ Lành AI
+              </Text>
+              <Text style={tw`text-blue-600/80 text-xs leading-4`}>
+                Bữa ăn này có lượng đạm khá tốt. Bạn nên bổ sung thêm một chút
+                chất xơ từ rau xanh để cân bằng tiêu hóa nhé!
+              </Text>
             </View>
           </View>
 
-          {/* AI Nutrition Tip */}
-          <View style={tw`bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100`}>
-            <View style={tw`flex-row items-start`}>
-              <View style={tw`w-10 h-10 bg-blue-500 rounded-xl items-center justify-center mr-4`}>
-                <Lightbulb size={20} color="#FFFFFF" />
-              </View>
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-brandDark font-bold text-base mb-2`}>
-                  Mẹo dinh dưỡng AI
-                </Text>
-                <Text style={tw`text-textSub text-sm leading-5`}>
-                  {dailyMeal.totalCalories > dailyMeal.dailyGoal * 0.7
-                    ? 'Bạn đã ăn quá calories vào bữa trưa, nên giảm vào bữa tối'
-                    : 'Hãy tiếp tục duy trì chế độ ăn cân bằng với nhiều rau củ và protein'}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Bottom spacing */}
-          <View style={tw`h-6`} />
+          <View style={tw`h-10`} />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
-interface MealSectionProps {
-  title: string;
-  time: string;
-  items: MealItem[];
-  onAddPress: () => void;
-  onItemPress: (item: MealItem) => void;
-  onRemoveItem: (itemId: string) => void;
-}
+// --- Sub-components ---
 
-const MealSection = ({
-  title,
-  time,
-  items,
-  onAddPress,
-  onItemPress,
-  onRemoveItem,
-}: MealSectionProps) => {
-  const totalCalories = items.reduce(
-    (sum, item) => sum + item.food.nutrition.calories * item.quantity,
-    0,
-  );
+const NutrientInfo = ({ label, value }: { label: string; value: number }) => (
+  <View style={tw`items-center`}>
+    <Text style={tw`text-white/60 text-[10px] font-bold mb-1`}>{label}</Text>
+    <Text style={tw`text-white font-bold`}>{value}g</Text>
+  </View>
+);
 
-  return (
-    <View style={tw`mb-6`}>
-      <View style={tw`flex-row justify-between items-center mb-3`}>
-        <View>
-          <Text style={tw`text-brandDark font-bold text-lg`}>{title}</Text>
-          <Text style={tw`text-textSub text-xs`}>{time}</Text>
-        </View>
-        <Text style={tw`text-primary font-bold`}>
-          Tổng: {totalCalories.toLocaleString()} kcal
-        </Text>
-      </View>
-
-      {items.length === 0 ? (
-        <TouchableOpacity
-          onPress={onAddPress}
-          style={tw`bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-6 items-center`}
-        >
-          <Plus size={24} color="#9CA3AF" />
-          <Text style={tw`text-textSub font-medium mt-2`}>+ Thêm đồ ăn</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={tw`bg-white rounded-2xl shadow-sm border border-gray-100`}>
-          {items.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => onItemPress(item)}
-              style={tw`flex-row items-center justify-between p-4 ${
-                index !== items.length - 1 ? 'border-b border-gray-100' : ''
-              }`}
-            >
-              <View style={tw`flex-1`}>
-                <Text style={tw`text-brandDark font-semibold text-base mb-1`}>
-                  {item.food.nameVietnamese}
-                </Text>
-                <Text style={tw`text-textSub text-xs`}>
-                  {item.food.nutrition.protein}g Protein • {item.food.nutrition.carbs}g Carbs •{' '}
-                  {item.food.nutrition.fat}g Fat
-                </Text>
-              </View>
-              <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-brandDark font-bold text-base mr-3`}>
-                  {item.food.nutrition.calories * item.quantity} kcal
-                </Text>
-                <TouchableOpacity
-                  onPress={() => onRemoveItem(item.id)}
-                  style={tw`p-1`}
-                >
-                  <X size={18} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity
-            onPress={onAddPress}
-            style={tw`p-4 border-t border-gray-100 flex-row items-center justify-center`}
-          >
-            <Plus size={20} color="#7FB069" />
-            <Text style={tw`text-primary font-semibold text-sm ml-2`}>
-              + Thêm đồ ăn
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+const FoodItemCard = ({ item }: { item: any }) => (
+  <View
+    style={tw`flex-row items-center bg-white border border-gray-100 p-4 rounded-2xl mb-3 shadow-sm`}
+  >
+    <View
+      style={tw`w-12 h-12 bg-gray-50 rounded-xl items-center justify-center mr-4`}
+    >
+      <Text style={tw`text-xl`}>🥗</Text>
     </View>
-  );
-};
+    <View style={tw`flex-1`}>
+      <Text style={tw`text-brandDark font-bold text-sm`}>
+        {item.foodName || 'Tên món ăn'}
+      </Text>
+      <Text style={tw`text-gray-400 text-xs`}>
+        {item.quantity || 1} phần • {item.calories || 0} kcal
+      </Text>
+    </View>
+    <TouchableOpacity style={tw`p-2 bg-red-50 rounded-lg`}>
+      <Trash2 size={16} color="#EF4444" />
+    </TouchableOpacity>
+  </View>
+);
 
 export default MealTrackingScreen;
