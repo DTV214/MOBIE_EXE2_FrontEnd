@@ -25,7 +25,8 @@ export class HospitalRepositoryImpl implements IHospitalNewRepository {
         { params }
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful (status 200 from backend)
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Failed to fetch hospitals');
       }
 
@@ -42,7 +43,8 @@ export class HospitalRepositoryImpl implements IHospitalNewRepository {
         `/api/public/hospitals/${id}`
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Hospital not found');
       }
 
@@ -59,7 +61,8 @@ export class HospitalRepositoryImpl implements IHospitalNewRepository {
         `/api/public/hospitals/specialties/${specialtyId}`
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Failed to fetch hospitals by specialty');
       }
 

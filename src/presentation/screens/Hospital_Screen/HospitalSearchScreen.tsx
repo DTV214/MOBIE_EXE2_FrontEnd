@@ -24,10 +24,10 @@ import {
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
-  searchFacilitiesUseCase,
-  suggestFacilitiesBySymptomsUseCase,
+  getAllHospitalsUseCase,
+  getHospitalsBySpecialtyUseCase,
 } from '../../../di/Container';
-import { Facility, FacilityType } from '../../../domain/entities/Hospital';
+import { Hospital, HospitalFilter } from '../../../domain/entities/HospitalNew';
 
 const HospitalSearchScreen = () => {
   const navigation = useNavigation<any>();

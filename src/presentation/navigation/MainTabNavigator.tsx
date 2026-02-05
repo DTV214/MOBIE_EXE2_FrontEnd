@@ -14,7 +14,8 @@ import tw from '../../utils/tailwind';
 // Import các màn hình
 import DashboardScreen from '../screens/Dashboard_Screen/DashboardScreen';
 import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
-import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
+// import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
+import HospitalListScreen from '../screens/Hospital_Screen/HospitalListScreen';
 import AIChatListScreen from '../screens/AI_Screen/AIChatListScreen';
 import ForumScreen from '../screens/Forum_Screen/ForumScreen';
 
@@ -59,7 +60,7 @@ const MainTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Trang chủ" component={DashboardScreen} />
-      <Tab.Screen name="Bệnh viện" component={HospitalSearchScreen} />
+      <Tab.Screen name="Bệnh viện" component={HospitalListScreen} />
       <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} />
       <Tab.Screen name="Diễn đàn" component={ForumScreen} />
       <Tab.Screen name="AI" component={AIChatListScreen} />

@@ -16,7 +16,8 @@ export class MedicalSpecialtyRepositoryImpl implements IMedicalSpecialtyReposito
         `/api/v1/medical-specialties/${id}`
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful  
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Specialty not found');
       }
 
@@ -33,7 +34,8 @@ export class MedicalSpecialtyRepositoryImpl implements IMedicalSpecialtyReposito
         `/api/v1/medical-specialties/hospitals/${hospitalId}`
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Failed to fetch hospital specialties');
       }
 
@@ -50,7 +52,8 @@ export class MedicalSpecialtyRepositoryImpl implements IMedicalSpecialtyReposito
         `/api/v1/medical-specialties/icd11s/${encodeURIComponent(icdUri)}`
       );
 
-      if (response.data.status !== 0) {
+      // Check if response is successful
+      if (response.data.status !== 200 && response.data.status !== 0) {
         throw new Error(response.data.message || 'Failed to fetch specialties by ICD11');
       }
 
