@@ -1,5 +1,5 @@
 // src/presentation/screens/AI_Screen/AIChatScreen.tsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,30 +20,46 @@ import {
   Heart,
   Mic,
 } from 'lucide-react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import {
-  getChatSessionUseCase,
-  sendChatMessageUseCase,
   getSuggestedQuestionsUseCase,
 } from '../../../di/Container';
-import { ChatMessage, SuggestedQuestion } from '../../../domain/entities/Chat';
+// Import the repository directly for AI features
+import { AIChatRepositoryImpl } from '../../../data/repositories/AIChatRepositoryImpl';
+import { SuggestedQuestion } from '../../../domain/entities/Chat';
+import { AIChatMessage } from '../../../domain/entities/AIChat';
+import { playAIAudio, stopAIAudio, isAudioPlaying } from '../../../utils/audioUtils';
 
 const AIChatScreen = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
-  const { sessionId } = route.params || {};
   
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Initialize AI repository
+  const [aiRepository] = useState(() => new AIChatRepositoryImpl());
+  
+  const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSpeechMode, setIsSpeechMode] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  const loadChatSession = useCallback(async () => {
+    try {
+      const session = await aiRepository.getCurrentSession();
+      setMessages(session.messages || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+      setLoading(false);
+    }
+  }, [aiRepository]);
 
   useEffect(() => {
     loadChatSession();
     loadSuggestedQuestions();
-  }, [sessionId]);
+  }, [loadChatSession]);
 
   useEffect(() => {
     // Auto scroll to bottom when new message arrives
@@ -53,17 +69,6 @@ const AIChatScreen = () => {
       }, 100);
     }
   }, [messages, isTyping]);
-
-  const loadChatSession = async () => {
-    try {
-      const session = await getChatSessionUseCase.execute();
-      setMessages(session.messages);
-    } catch (error) {
-      console.error('Error loading chat session:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadSuggestedQuestions = async () => {
     try {
@@ -77,9 +82,12 @@ const AIChatScreen = () => {
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}-user`,
-      content: inputText.trim(),
+    const userMessageContent = inputText.trim();
+    
+    // Add user message to local state
+    const userMessage: AIChatMessage = {
+      id: `user_${Date.now()}`,
+      content: userMessageContent,
       sender: 'user',
       timestamp: new Date().toISOString(),
     };
@@ -89,18 +97,63 @@ const AIChatScreen = () => {
     setIsTyping(true);
 
     try {
-      const aiResponse = await sendChatMessageUseCase.execute(userMessage.content);
-      setMessages(prev => [...prev, aiResponse]);
-    } catch (error) {
+      // Add user message to session
+      await aiRepository.addUserMessage(userMessageContent);
+      
+      // Get AI response with speech mode
+      const aiMessage = await aiRepository.sendAIMessage(userMessageContent, isSpeechMode);
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Auto-play audio if in speech mode and audio available
+      if (isSpeechMode && aiMessage.audioBase64) {
+        handlePlayAudio(aiMessage.id, aiMessage.audioBase64);
+      }
+      
+    } catch (error: any) {
       console.error('Error sending message:', error);
+      
+      // Show error message
+      const errorMessage: AIChatMessage = {
+        id: `error_${Date.now()}`,
+        content: error.message || 'Đã xảy ra lỗi khi gửi tin nhắn. Vui lòng thử lại.',
+        sender: 'ai',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
     }
   };
 
+  // Audio playback functions
+  const handlePlayAudio = async (messageId: string, audioBase64: string) => {
+    try {
+      setPlayingAudioId(messageId);
+      await playAIAudio(audioBase64);
+    } catch (error) {
+      console.error('Audio playback error:', error);
+    } finally {
+      setPlayingAudioId(null);
+    }
+  };
+
+  const handleStopAudio = () => {
+    stopAIAudio();
+    setPlayingAudioId(null);
+  };
+
+  // Toggle speech mode
+  const toggleSpeechMode = () => {
+    setIsSpeechMode(!isSpeechMode);
+    if (isAudioPlaying()) {
+      handleStopAudio();
+    }
+  };
+
   const handleSuggestedQuestion = async (question: string) => {
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}-user`,
+    const userMessage: AIChatMessage = {
+      id: `user_${Date.now()}`,
       content: question,
       sender: 'user',
       timestamp: new Date().toISOString(),
@@ -110,8 +163,18 @@ const AIChatScreen = () => {
     setIsTyping(true);
 
     try {
-      const aiResponse = await sendChatMessageUseCase.execute(question);
-      setMessages(prev => [...prev, aiResponse]);
+      // Add user message to session
+      await aiRepository.addUserMessage(question);
+      
+      // Get AI response
+      const aiMessage = await aiRepository.sendAIMessage(question, isSpeechMode);
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      if (isSpeechMode && aiMessage.audioBase64) {
+        handlePlayAudio(aiMessage.id, aiMessage.audioBase64);
+      }
+      
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -128,8 +191,9 @@ const AIChatScreen = () => {
     return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const renderMessage = ({ item }: { item: AIChatMessage }) => {
     const isUser = item.sender === 'user';
+    const isPlayingThis = playingAudioId === item.id;
     
     return (
       <View
@@ -160,6 +224,30 @@ const AIChatScreen = () => {
             >
               {item.content}
             </Text>
+            
+            {/* Audio Controls for AI messages with audio */}
+            {!isUser && item.hasAudio && item.audioBase64 && (
+              <View style={tw`flex-row items-center mt-2 pt-2 border-t border-gray-200`}>
+                <TouchableOpacity
+                  style={tw`flex-row items-center px-2 py-1 rounded-lg ${
+                    isPlayingThis ? 'bg-red-100' : 'bg-green-100'
+                  }`}
+                  onPress={() => 
+                    isPlayingThis 
+                      ? handleStopAudio() 
+                      : handlePlayAudio(item.id, item.audioBase64!)
+                  }
+                >
+                  <Bot size={12} color={isPlayingThis ? "#DC2626" : "#059669"} />
+                  <Text style={tw`text-xs ml-1 ${
+                    isPlayingThis ? 'text-red-600' : 'text-green-600'
+                  }`}>
+                    {isPlayingThis ? 'Dừng' : 'Phát'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
             <Text
               style={tw`text-[10px] mt-1 ${
                 isUser ? 'text-white/70' : 'text-textSub'
@@ -272,10 +360,32 @@ const AIChatScreen = () => {
 
       {/* Input Bar */}
       <View style={tw`bg-white border-t border-gray-100 px-6 py-4`}>
+        {/* Speech Mode Toggle */}
+        <View style={tw`flex-row items-center justify-between mb-3`}>
+          <Text style={tw`text-textSub text-sm`}>Chế độ thoại</Text>
+          <TouchableOpacity
+            onPress={toggleSpeechMode}
+            style={tw`flex-row items-center px-3 py-1 rounded-full ${
+              isSpeechMode ? 'bg-green-100' : 'bg-gray-100'
+            }`}
+          >
+            <Mic size={16} color={isSpeechMode ? "#059669" : "#6B7280"} />
+            <Text style={tw`text-xs ml-1 ${
+              isSpeechMode ? 'text-green-600' : 'text-gray-600'
+            }`}>
+              {isSpeechMode ? 'BẬT' : 'TẮT'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
         <View style={tw`flex-row items-center`}>
           <View style={tw`flex-1 bg-gray-50 rounded-2xl px-4 py-3 mr-3 flex-row items-center`}>
             <TextInput
-              placeholder="Hỏi Lành AI bất cứ điều gì về sức khỏe của..."
+              placeholder={
+                isSpeechMode 
+                  ? "Gửi tin nhắn và nhận phản hồi bằng giọng nói..." 
+                  : "Hỏi Lành AI bất cứ điều gì về sức khỏe..."
+              }
               placeholderTextColor="#9CA3AF"
               style={tw`flex-1 text-brandDark text-sm`}
               value={inputText}
@@ -283,9 +393,6 @@ const AIChatScreen = () => {
               multiline
               maxLength={500}
             />
-            <TouchableOpacity style={tw`ml-2`}>
-              <Mic size={20} color="#7FB069" />
-            </TouchableOpacity>
           </View>
           <TouchableOpacity
             onPress={handleSendMessage}

@@ -2,8 +2,78 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ONBOARDING_KEY = '@onboarding_completed';
+const AUTH_DATA_KEY = '@auth_data';
+
+interface AuthData {
+  accessToken: string;
+  tokenType: string;
+  userId: number;
+  email: string;
+  fullname: string;
+  role: string;
+}
 
 export class StorageRepository {
+  /**
+   * Generic method to store any data
+   */
+  async set<T>(key: string, data: T): Promise<void> {
+    try {
+      const jsonData = JSON.stringify(data);
+      await AsyncStorage.setItem(`@${key}`, jsonData);
+    } catch (error) {
+      console.error(`Error saving ${key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generic method to get any data
+   */
+  async get<T>(key: string): Promise<T | null> {
+    try {
+      const jsonData = await AsyncStorage.getItem(`@${key}`);
+      if (jsonData) {
+        return JSON.parse(jsonData) as T;
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error reading ${key}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Generic method to remove data
+   */
+  async remove(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(`@${key}`);
+    } catch (error) {
+      console.error(`Error removing ${key}:`, error);
+    }
+  }
+
+  /**
+   * Save authentication data
+   */
+  async saveAuthData(authData: AuthData): Promise<void> {
+    return this.set(AUTH_DATA_KEY, authData);
+  }
+
+  /**
+   * Get authentication data
+   */
+  async getAuthData(): Promise<AuthData | null> {
+    return this.get<AuthData>(AUTH_DATA_KEY);
+  }
+
+  /**
+   * Clear authentication data
+   */
+  async clearAuthData(): Promise<void> {
+    return this.remove(AUTH_DATA_KEY);
+  }
   /**
    * Kiểm tra xem người dùng đã xem onboarding chưa
    */

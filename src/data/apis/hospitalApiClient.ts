@@ -1,13 +1,10 @@
 // src/data/apis/hospitalApiClient.ts
 import axios from 'axios';
-import { Platform } from 'react-native';
 
 // Create dedicated axios instance for hospital APIs
 const hospitalApiClient = axios.create({
-  baseURL: Platform.OS === 'android' 
-    ? 'http://10.0.2.2:8080' 
-    : 'http://localhost:8080',
-  timeout: 10000,
+  baseURL: 'http://14.225.207.221:8080',
+  timeout: 15000, // Increase timeout for external server
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

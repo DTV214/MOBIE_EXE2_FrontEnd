@@ -2,8 +2,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Thay đổi baseURL thành địa chỉ IP máy tính của bạn nếu chạy trên thiết bị thật (VD: 192.168.1.x:8080)
-const BASE_URL = 'http://10.0.2.2:8080'; // Dành cho Android Emulator
+// Production server URL - same as AI Chat API
+const BASE_URL = 'http://14.225.207.221:8080'; // Production server
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

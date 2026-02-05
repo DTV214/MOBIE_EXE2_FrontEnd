@@ -47,10 +47,23 @@ export const useUserStore = create<UserState>((set, get) => ({
       }
     } catch (error: any) {
       console.error('Error fetching profile:', error);
-      set({
-        loading: false,
-        error: error.message || 'Không thể tải thông tin cá nhân',
-      });
+      
+      // Check if it's an authentication error (401/403)
+      const isAuthError = error?.response?.status === 401 || 
+                         error?.response?.status === 403 ||
+                         error?.message?.includes('Network Error');
+      
+      if (isAuthError) {
+        // Clear user data on auth error
+        set({ user: null, healthProfile: null, loading: false, error: null });
+        // Don't set error message to avoid UI disruption on login flow
+        console.log('Authentication failed - user needs to login');
+      } else {
+        set({
+          loading: false,
+          error: error.message || 'Không thể tải thông tin cá nhân',
+        });
+      }
     }
   },
 

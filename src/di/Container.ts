@@ -3,7 +3,6 @@ import { StorageRepository } from '../data/repositories/StorageRepository';
 import { MockHealthRepository } from '../data/repositories/MockHealthRepository';
 import { MockMealRepository } from '../data/repositories/MockMealRepository';
 import { MockForumRepository } from '../data/repositories/MockForumRepository';
-import { MockChatRepository } from '../data/repositories/MockChatRepository';
 import { MockHospitalRepository } from '../data/repositories/MockHospitalRepository';
 import { MockSubscriptionRepository } from '../data/repositories/MockSubscriptionRepository';
 import { GetUserProfile } from '../domain/usecases/GetUserProfile';
@@ -42,6 +41,9 @@ import { GetTransactionById } from '../domain/usecases/GetTransactionById';
 import { AuthRepositoryImpl } from '../data/repositories/auth/AuthRepositoryImpl';
 import { LoginWithGoogle } from '../domain/usecases/auth/LoginWithGoogle';
 
+// AI Chat imports
+import { AIChatRepositoryImpl } from '../data/repositories/AIChatRepositoryImpl';
+
 // NEW: Hospital & Medical Specialty imports
 import { HospitalRepositoryImpl } from '../data/repositories/hospital/HospitalRepositoryImpl';
 import { MedicalSpecialtyRepositoryImpl } from '../data/repositories/specialty/MedicalSpecialtyRepositoryImpl';
@@ -56,7 +58,7 @@ const storageRepository = new StorageRepository();
 const healthRepository = new MockHealthRepository();
 const mealRepository = new MockMealRepository();
 const forumRepository = new MockForumRepository();
-const chatRepository = new MockChatRepository();
+const chatRepository = new AIChatRepositoryImpl(); // ✅ Real AI API
 const hospitalRepository = new MockHospitalRepository();
 const subscriptionRepository = new MockSubscriptionRepository();
 const authRepository = new AuthRepositoryImpl();

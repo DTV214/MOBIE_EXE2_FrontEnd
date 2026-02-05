@@ -102,9 +102,33 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       return success;
     } catch (error: any) {
       console.error('Lỗi submit survey:', error);
+      
+      // Enhanced error handling
+      let errorMessage = 'Có lỗi xảy ra, vui lòng thử lại.';
+      
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        if (status === 401 || status === 403) {
+          errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        } else if (status === 400) {
+          errorMessage = 'Thông tin không hợp lệ. Vui lòng kiểm tra lại.';
+        } else if (status >= 500) {
+          errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+        } else {
+          errorMessage = error.response.data?.message || `Lỗi ${status}`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+      } else {
+        // Other error
+        errorMessage = error.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      }
+      
       set({
         loading: false,
-        error: error.message || 'Có lỗi xảy ra, vui lòng thử lại.',
+        error: errorMessage,
       });
       return false;
     }

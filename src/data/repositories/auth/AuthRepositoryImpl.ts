@@ -41,11 +41,8 @@ export class AuthRepositoryImpl implements IAuthRepository {
     }
   }
 
-  // URL Callback (đảm bảo BE của bạn đang chạy đúng port này)
-  private apiUrl =
-    Platform.OS === 'android'
-      ? 'http://10.0.2.2:8080/api/auth/google/android-callback'
-      : 'http://localhost:8080/api/auth/google/android-callback';
+  // URL Callback - Updated to use production server
+  private apiUrl = 'http://14.225.207.221:8080/api/auth/google/android-callback';
 
   async loginWithGoogle(idToken: string): Promise<string> {
     try {

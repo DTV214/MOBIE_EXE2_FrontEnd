@@ -44,8 +44,9 @@ const AppNavigator = () => {
             setInitialRoute('Survey');
           }
         } catch (error) {
-          // Nếu token hết hạn hoặc lỗi mạng -> Quay về Login
+          // Nếu token hết hạn hoặc lỗi mạng -> Xóa token và quay về Login
           console.error('Token invalid or expired:', error);
+          await AsyncStorage.removeItem('accessToken'); // Clear invalid token
           setInitialRoute('Login');
         }
       } else if (hasOnboarded) {
