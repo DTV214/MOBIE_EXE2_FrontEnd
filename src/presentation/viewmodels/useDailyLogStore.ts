@@ -6,9 +6,11 @@ import {
   createDailyLogUseCase,
   getMealLogsByDailyLogIdUseCase,
   createMealLogUseCase,
+  updateMealLogUseCase, // Mới thêm
+  deleteMealLogUseCase, // Mới thêm
 } from '../../di/Container';
 
-// Định nghĩa cấu trúc tham số từ Pop-up gửi xuống
+// Định nghĩa tham số cho cả tạo mới và cập nhật
 export interface AddMealLogParams {
   mealType: MealType;
   loggedTime: string; // Định dạng "HH:mm:ss"
@@ -25,7 +27,9 @@ interface DailyLogState {
   // Actions
   setSelectedDate: (date: string) => void;
   fetchLogByDate: (date: string) => Promise<void>;
-  addMealLog: (params: AddMealLogParams) => Promise<void>; // Cập nhật tham số
+  addMealLog: (params: AddMealLogParams) => Promise<void>;
+  updateMealLog: (id: number, params: AddMealLogParams) => Promise<void>; // Mới
+  deleteMealLog: (id: number) => Promise<void>; // Mới
   initializeLog: (date: string) => Promise<void>;
 }
 
@@ -43,116 +47,125 @@ export const useDailyLogStore = create<DailyLogState>((set, get) => ({
   error: null,
 
   setSelectedDate: (date: string) => {
-    console.log('--- [STORE] User selected date:', date);
     set({ selectedDate: date });
   },
 
   // Lấy dữ liệu Nhật ký & Bữa ăn
   fetchLogByDate: async (date: string) => {
-    console.log('--- [STORE] fetchLogByDate triggered for:', date);
     set({ isLoading: true, error: null, mealLogs: [] });
-
     try {
       const log = await getDailyLogByDateUseCase.execute(date);
-
       if (log) {
-        console.log(
-          '--- [STORE] DailyLog exists (ID:',
-          log.id,
-          '). Fetching meals...',
-        );
         const meals = await getMealLogsByDailyLogIdUseCase.execute(log.id);
         set({ currentLog: log, mealLogs: meals, isLoading: false });
       } else {
-        console.log('--- [STORE] DailyLog does not exist for this date.');
         set({ currentLog: null, mealLogs: [], isLoading: false });
       }
     } catch (err: any) {
-      console.error('--- [STORE] fetchLogByDate Global Error:', err);
       set({
         error: err.message || 'Lỗi kết nối máy chủ',
         isLoading: false,
         currentLog: null,
-        mealLogs: [],
       });
     }
   },
 
-  // Khởi tạo Nhật ký ngày mới
+  // THÊM BỮA ĂN
+  addMealLog: async (params: AddMealLogParams) => {
+    const { currentLog, selectedDate } = get();
+    if (!currentLog) throw new Error('Vui lòng khởi tạo nhật ký ngày trước.');
+
+    set({ isLoading: true, error: null });
+    try {
+      // Chuẩn hóa thời gian HH:mm:ss để tránh lỗi 500
+      let formattedTime = params.loggedTime;
+      if (formattedTime.split(':').length === 2) formattedTime += ':00';
+
+      await createMealLogUseCase.execute(
+        currentLog.id,
+        params.mealType,
+        formattedTime,
+        params.notes,
+      );
+
+      // Refresh toàn bộ dữ liệu (Calo + Danh sách bữa ăn)
+      const [updatedLog, updatedMeals] = await Promise.all([
+        getDailyLogByDateUseCase.execute(selectedDate),
+        getMealLogsByDailyLogIdUseCase.execute(currentLog.id),
+      ]);
+      set({ currentLog: updatedLog, mealLogs: updatedMeals, isLoading: false });
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message || err.message || 'Lỗi tạo bữa ăn';
+      set({ error: msg, isLoading: false });
+      throw err; // Ném lỗi cho UI catch
+    }
+  },
+
+  // CẬP NHẬT BỮA ĂN (MỚI)
+  updateMealLog: async (id: number, params: AddMealLogParams) => {
+    const { currentLog, selectedDate } = get();
+    if (!currentLog) return;
+
+    console.log(`--- [STORE] Updating MealLog ID: ${id}`, params);
+    set({ isLoading: true, error: null });
+
+    try {
+      // Chuẩn hóa thời gian HH:mm:ss
+      let formattedTime = params.loggedTime;
+      if (formattedTime.split(':').length === 2) formattedTime += ':00';
+
+      await updateMealLogUseCase.execute(
+        id,
+        params.mealType,
+        formattedTime,
+        params.notes,
+      );
+
+      // Refresh dữ liệu để cập nhật Calo và hiển thị
+      const [updatedLog, updatedMeals] = await Promise.all([
+        getDailyLogByDateUseCase.execute(selectedDate),
+        getMealLogsByDailyLogIdUseCase.execute(currentLog.id),
+      ]);
+      set({ currentLog: updatedLog, mealLogs: updatedMeals, isLoading: false });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Lỗi cập nhật';
+      set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
+  // XÓA BỮA ĂN (MỚI)
+  deleteMealLog: async (id: number) => {
+    const { currentLog, selectedDate } = get();
+    if (!currentLog) return;
+
+    console.log(`--- [STORE] Deleting MealLog ID: ${id}`);
+    set({ isLoading: true, error: null });
+
+    try {
+      await deleteMealLogUseCase.execute(id);
+
+      // Sau khi xóa, phải lấy lại DailyLog để cập nhật Calo nạp vào đã giảm xuống
+      const [updatedLog, updatedMeals] = await Promise.all([
+        getDailyLogByDateUseCase.execute(selectedDate),
+        getMealLogsByDailyLogIdUseCase.execute(currentLog.id),
+      ]);
+      set({ currentLog: updatedLog, mealLogs: updatedMeals, isLoading: false });
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Lỗi khi xóa';
+      set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
   initializeLog: async (date: string) => {
-    console.log('--- [STORE] Creating DailyLog for:', date);
     set({ isLoading: true, error: null });
     try {
       const newLog = await createDailyLogUseCase.execute(date);
       set({ currentLog: newLog, mealLogs: [], isLoading: false });
     } catch (err: any) {
-      console.error('--- [STORE] initializeLog ERROR:', err);
       set({ error: err.message, isLoading: false });
-    }
-  },
-
-  // THÊM BỮA ĂN (Xử lý từ Pop-up Form)
-  addMealLog: async (params: AddMealLogParams) => {
-    const { currentLog, selectedDate } = get();
-
-    if (!currentLog) {
-      console.warn('--- [STORE] addMealLog blocked: currentLog is null');
-      return;
-    }
-
-    // LOG DỮ LIỆU ĐẦU VÀO
-    console.log('--- [STORE] PRE-CHECK PAYLOAD:', {
-      dailyLogId: currentLog.id,
-      ...params,
-    });
-
-    set({ isLoading: true, error: null });
-
-    try {
-      // 1. Gửi request
-      await createMealLogUseCase.execute(
-        currentLog.id,
-        params.mealType,
-        params.loggedTime,
-        params.notes,
-      );
-
-      console.log('--- [STORE] API CALL SUCCESS');
-
-      // 2. Fetch lại dữ liệu
-      const [updatedLog, updatedMeals] = await Promise.all([
-        getDailyLogByDateUseCase.execute(selectedDate),
-        getMealLogsByDailyLogIdUseCase.execute(currentLog.id),
-      ]);
-
-      set({
-        currentLog: updatedLog,
-        mealLogs: updatedMeals,
-        isLoading: false,
-      });
-    } catch (err: any) {
-      // CHI TIẾT LỖI TỪ SERVER
-      console.error('--- [STORE] addMealLog FAILED');
-
-      if (err.response) {
-        // Đây là nơi chứa thông tin quý giá nhất khi bị lỗi 500
-        console.error(
-          '--- [SERVER ERROR DATA]:',
-          JSON.stringify(err.response.data, null, 2),
-        );
-        console.error('--- [SERVER STATUS]:', err.response.status);
-        console.error('--- [SERVER HEADERS]:', err.response.headers);
-      } else if (err.request) {
-        console.error('--- [NETWORK ERROR]: No response received from server');
-      } else {
-        console.error('--- [UNKNOWN ERROR]:', err.message);
-      }
-
-      const serverMessage =
-        err.response?.data?.message || err.message || 'Lỗi hệ thống';
-      set({ error: serverMessage, isLoading: false });
-
-      throw err;
     }
   },
 }));
