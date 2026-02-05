@@ -35,7 +35,6 @@ const LoginScreen = () => {
   const {
     loginWithGoogle,
     loading: authLoading,
-    error: authError,
   } = useAuthStore();
   const { fetchUserProfile } = useUserStore();
 
@@ -51,62 +50,31 @@ const LoginScreen = () => {
   }, []);
 
   // Xử lý Đăng nhập Google (Luồng chính)
-  const handleGoogleLogin = async () => {
-    try {
-      // 1. Gọi API đăng nhập Google & lấy Token
-      const success = await loginWithGoogle();
+const handleGoogleLogin = async () => {
+  console.log('--- [STEP 1] User clicked Google Login Button ---');
+  try {
+    const success = await loginWithGoogle();
 
-      if (success) {
-        // 2. Nếu có token, gọi ngay API lấy thông tin User để kiểm tra Profile
-        await fetchUserProfile();
+    if (success) {
+      console.log('--- [FLOW] Auth Success. Now fetching User Profile ---');
+      await fetchUserProfile();
 
-        // Lấy state user mới nhất trực tiếp từ store
-        const currentUser = useUserStore.getState().user;
+      const currentUser = useUserStore.getState().user;
+      console.log('--- [STEP 8] Determining Redirection Logic ---');
+      console.log('User Health Profile Status:', currentUser?.hasHealthProfile);
 
-        // 3. Phân luồng điều hướng
-        if (currentUser?.hasHealthProfile) {
-          // Case 1: Đã có hồ sơ -> Vào thẳng Dashboard
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Main' }],
-          });
-          Toast.show({
-            type: 'success',
-            text1: 'Đăng nhập thành công',
-            text2: `Chào mừng ${currentUser.fullName} quay trở lại! 👋`,
-          });
-        } else {
-          // Case 2: Chưa có hồ sơ -> Vào trang Khảo sát
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Survey' }],
-          });
-          Toast.show({
-            type: 'info',
-            text1: 'Chào mừng thành viên mới',
-            text2: 'Hãy thiết lập hồ sơ sức khỏe để bắt đầu nhé!',
-          });
-        }
+      if (currentUser?.hasHealthProfile) {
+        console.log('--- [NAVIGATION] Redirecting to Dashboard (Main) ---');
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       } else {
-        // Xử lý khi loginWithGoogle trả về false (hoặc user hủy)
-        if (authError) {
-          Toast.show({
-            type: 'error',
-            text1: 'Đăng nhập thất bại',
-            text2: authError,
-          });
-        }
+        console.log('--- [NAVIGATION] Redirecting to Survey Screen ---');
+        navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
       }
-    } catch (error: any) {
-      console.error('Login Error:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Lỗi hệ thống',
-        text2: 'Vui lòng thử lại sau.',
-      });
     }
-  };
-
+  } catch (error) {
+    console.error('--- [SCREEN LEVEL ERROR] ---', error);
+  }
+};
   // Placeholder cho đăng nhập thường (Chưa có API)
   const handleLogin = () => {
     Toast.show({

@@ -12,6 +12,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
+import { debugAIAPI, checkAuthStatus } from '../../../utils/debugAI';
+import { audioPlayer } from '../../../utils/audioPlayer';
+import { playAIAudioFallback, simpleAudioPlayer } from '../../../utils/audioPlayerSimple';
 import {
   Send,
   Bot,
@@ -19,16 +22,13 @@ import {
   MoreVertical,
   Heart,
   Mic,
+  Play,
+  Square
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import {
-  getSuggestedQuestionsUseCase,
-} from '../../../di/Container';
 // Import the repository directly for AI features
 import { AIChatRepositoryImpl } from '../../../data/repositories/AIChatRepositoryImpl';
-import { SuggestedQuestion } from '../../../domain/entities/Chat';
 import { AIChatMessage } from '../../../domain/entities/AIChat';
-import { playAIAudio, stopAIAudio, isAudioPlaying } from '../../../utils/audioUtils';
 
 const AIChatScreen = () => {
   const navigation = useNavigation<any>();
@@ -38,7 +38,6 @@ const AIChatScreen = () => {
   
   const [messages, setMessages] = useState<AIChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSpeechMode, setIsSpeechMode] = useState(false);
@@ -47,6 +46,10 @@ const AIChatScreen = () => {
 
   const loadChatSession = useCallback(async () => {
     try {
+      // Debug: Check authentication status first
+      console.log('🔍 Checking auth status before loading AI chat...');
+      await checkAuthStatus();
+      
       const session = await aiRepository.getCurrentSession();
       setMessages(session.messages || []);
       setLoading(false);
@@ -58,7 +61,11 @@ const AIChatScreen = () => {
 
   useEffect(() => {
     loadChatSession();
-    loadSuggestedQuestions();
+    
+    // Debug AI API on component mount
+    debugAIAPI().then(result => {
+      console.log('🔬 AI API Debug Result:', result);
+    });
   }, [loadChatSession]);
 
   useEffect(() => {
@@ -69,15 +76,6 @@ const AIChatScreen = () => {
       }, 100);
     }
   }, [messages, isTyping]);
-
-  const loadSuggestedQuestions = async () => {
-    try {
-      const questions = await getSuggestedQuestionsUseCase.execute();
-      setSuggestedQuestions(questions);
-    } catch (error) {
-      console.error('Error loading suggested questions:', error);
-    }
-  };
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -130,55 +128,47 @@ const AIChatScreen = () => {
   const handlePlayAudio = async (messageId: string, audioBase64: string) => {
     try {
       setPlayingAudioId(messageId);
-      await playAIAudio(audioBase64);
+      console.log('🎵 Playing audio for message:', messageId);
+      
+      // Try fallback player (file-based first, then simple)
+      await playAIAudioFallback(audioBase64);
+      
     } catch (error) {
-      console.error('Audio playback error:', error);
+      console.error('❌ Error playing audio:', error);
+      
+      // Show user-friendly message if audio fails
+      const errorMessage = error instanceof Error ? error.message : 'Không thể phát audio';
+      console.log('📢 Audio error:', errorMessage);
+      
     } finally {
       setPlayingAudioId(null);
     }
   };
 
   const handleStopAudio = () => {
-    stopAIAudio();
+    // Stop both possible audio players
+    try {
+      audioPlayer.stop();
+    } catch {
+      console.log('Complex audio player not active');
+    }
+    
+    try {
+      simpleAudioPlayer.stop();
+    } catch {
+      console.log('Simple audio player not active');
+    }
+    
     setPlayingAudioId(null);
   };
 
   // Toggle speech mode
   const toggleSpeechMode = () => {
     setIsSpeechMode(!isSpeechMode);
-    if (isAudioPlaying()) {
+    
+    // Stop any playing audio when toggling speech mode
+    if (audioPlayer.getIsPlaying() || simpleAudioPlayer.getIsPlaying()) {
       handleStopAudio();
-    }
-  };
-
-  const handleSuggestedQuestion = async (question: string) => {
-    const userMessage: AIChatMessage = {
-      id: `user_${Date.now()}`,
-      content: question,
-      sender: 'user',
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      // Add user message to session
-      await aiRepository.addUserMessage(question);
-      
-      // Get AI response
-      const aiMessage = await aiRepository.sendAIMessage(question, isSpeechMode);
-      
-      setMessages(prev => [...prev, aiMessage]);
-      
-      if (isSpeechMode && aiMessage.audioBase64) {
-        handlePlayAudio(aiMessage.id, aiMessage.audioBase64);
-      }
-      
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
-      setIsTyping(false);
     }
   };
 
@@ -238,7 +228,11 @@ const AIChatScreen = () => {
                       : handlePlayAudio(item.id, item.audioBase64!)
                   }
                 >
-                  <Bot size={12} color={isPlayingThis ? "#DC2626" : "#059669"} />
+                  {isPlayingThis ? (
+                    <Square size={12} color="#DC2626" />
+                  ) : (
+                    <Play size={12} color="#059669" />
+                  )}
                   <Text style={tw`text-xs ml-1 ${
                     isPlayingThis ? 'text-red-600' : 'text-green-600'
                   }`}>
@@ -338,26 +332,6 @@ const AIChatScreen = () => {
         }
       />
 
-      {/* Suggested Questions */}
-      {suggestedQuestions.length > 0 && messages.length <= 1 && (
-        <View style={tw`px-6 pb-2`}>
-          <Text style={tw`text-textSub text-xs mb-2`}>Câu hỏi gợi ý:</Text>
-          <View style={tw`flex-row flex-wrap`}>
-            {suggestedQuestions.map((question) => (
-              <TouchableOpacity
-                key={question.id}
-                onPress={() => handleSuggestedQuestion(question.text)}
-                style={tw`bg-primaryLight px-4 py-2 rounded-full mr-2 mb-2`}
-              >
-                <Text style={tw`text-primary font-semibold text-xs`}>
-                  {question.text}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
       {/* Input Bar */}
       <View style={tw`bg-white border-t border-gray-100 px-6 py-4`}>
         {/* Speech Mode Toggle */}
@@ -392,6 +366,11 @@ const AIChatScreen = () => {
               onChangeText={setInputText}
               multiline
               maxLength={500}
+              autoCorrect={false}
+              autoCapitalize="sentences"
+              underlineColorAndroid="transparent"
+              allowFontScaling={false}
+              selection={undefined}
             />
           </View>
           <TouchableOpacity

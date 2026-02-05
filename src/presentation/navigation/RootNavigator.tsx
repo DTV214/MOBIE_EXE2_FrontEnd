@@ -26,6 +26,8 @@ import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
 import EditProfileScreen from '../screens/Profile_Screen/EditProfileScreen';
 // ✅ MỚI: Import màn hình khảo sát
 import SurveyScreen from '../screens/Survey_Screen/SurveyScreen';
+import DailyLogScreen from '../screens/Tracking_Daily_Screen/DailyLogScreen';
+import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,6 +66,9 @@ const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
+
+      <Stack.Screen name="DailyLog" component={DailyLogScreen} />
+      <Stack.Screen name="MealTracking" component={MealTrackingScreen} />
     </Stack.Navigator>
   );
 };

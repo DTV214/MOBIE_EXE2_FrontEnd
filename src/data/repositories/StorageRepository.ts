@@ -62,17 +62,41 @@ export class StorageRepository {
   }
 
   /**
-   * Get authentication data
+   * Get authentication data - Fixed to use same key as AuthRepositoryImpl
    */
   async getAuthData(): Promise<AuthData | null> {
-    return this.get<AuthData>(AUTH_DATA_KEY);
+    try {
+      // Use the same key as AuthRepositoryImpl uses
+      const token = await AsyncStorage.getItem('accessToken');
+      if (token) {
+        // Return minimal AuthData with token
+        return {
+          accessToken: token,
+          tokenType: 'Bearer',
+          userId: 0, // Will be populated from JWT if needed
+          email: '',
+          fullname: '',
+          role: '',
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting auth data:', error);
+      return null;
+    }
   }
 
   /**
-   * Clear authentication data
+   * Clear authentication data - Fixed to use same key as AuthRepositoryImpl
    */
   async clearAuthData(): Promise<void> {
-    return this.remove(AUTH_DATA_KEY);
+    try {
+      // Clear the same key as AuthRepositoryImpl uses
+      await AsyncStorage.removeItem('accessToken');
+      console.log('🧹 Cleared auth data (accessToken)');
+    } catch (error) {
+      console.error('Error clearing auth data:', error);
+    }
   }
   /**
    * Kiểm tra xem người dùng đã xem onboarding chưa

@@ -150,6 +150,10 @@ const ForumScreen = () => {
             style={tw`flex-1 ml-3 text-brandDark`}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCorrect={false}
+            autoCapitalize="words"
+            underlineColorAndroid="transparent"
+            allowFontScaling={false}
           />
         </View>
 
@@ -199,6 +203,10 @@ const ForumScreen = () => {
               placeholderTextColor="#9CA3AF"
               style={tw`flex-1 text-brandDark`}
               onFocus={() => navigation.navigate('CreatePost')}
+              autoCorrect={false}
+              autoCapitalize="sentences"
+              underlineColorAndroid="transparent"
+              allowFontScaling={false}
             />
           </View>
           <View style={tw`flex-row justify-between`}>

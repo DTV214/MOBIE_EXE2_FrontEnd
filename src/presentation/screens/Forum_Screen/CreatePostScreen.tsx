@@ -121,6 +121,10 @@ const CreatePostScreen = () => {
             onChangeText={setContent}
             multiline
             textAlignVertical="top"
+            autoCorrect={false}
+            autoCapitalize="sentences"
+            underlineColorAndroid="transparent"
+            allowFontScaling={false}
           />
 
           {/* Media Preview */}

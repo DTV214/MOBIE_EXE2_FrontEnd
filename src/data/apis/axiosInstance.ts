@@ -2,27 +2,35 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Production server URL - same as AI Chat API
-const BASE_URL = 'http://14.225.207.221:8080'; // Production server
+// Use production server IP since localhost is not running
+const BASE_URL = 'http://14.225.207.221:8080';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout for external server
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor: Tự động gắn Token vào mọi request
 axiosInstance.interceptors.request.use(
   async config => {
-    const token = await AsyncStorage.getItem('accessToken'); // Lấy token đã lưu khi Login
+    const token = await AsyncStorage.getItem('accessToken');
+    // LOG CHI TIẾT INTERCEPTOR
+    console.log(`--- [AXIOS INTERCEPTOR] Preparing Request ---`);
+    console.log(`URL: ${config.baseURL}${config.url}`);
+    console.log(`Method: ${config.method?.toUpperCase()}`);
+    console.log(`Stored Token: ${token}`);
+
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // Gắn vào Header
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  error => Promise.reject(error),
+  error => {
+    console.error('--- [AXIOS INTERCEPTOR ERROR] ---', error);
+    return Promise.reject(error);
+  },
 );
 
 export default axiosInstance;

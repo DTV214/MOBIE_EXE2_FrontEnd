@@ -1,7 +1,7 @@
 // src/data/repositories/AIChatRepositoryImpl.ts
 import { IChatRepository } from '../../domain/repositories/IChatRepository';
 import { ChatMessage, SuggestedQuestion } from '../../domain/entities/Chat';
-import { AIChatMessage, AISession, AIPromptRequest, AIPromptResponse } from '../../domain/entities/AIChat';
+import { AIChatMessage, AISession } from '../../domain/entities/AIChat';
 import aiApiClient from '../apis/aiApiClient';
 import { StorageRepository } from './StorageRepository';
 
@@ -18,23 +18,31 @@ export class AIChatRepositoryImpl implements IChatRepository {
     try {
       // Get access token for authentication
       const authData = await this.storageRepository.getAuthData();
+      console.log('🔐 Auth data check:', {
+        hasAuthData: !!authData,
+        hasToken: !!authData?.accessToken,
+        tokenPreview: authData?.accessToken?.substring(0, 20) + '...' || 'No token'
+      });
+      
       if (!authData?.accessToken) {
-        throw new Error('Authentication required');
+        console.error('❌ No access token found - user needs to login');
+        throw new Error('Vui lòng đăng nhập để sử dụng AI chat');
       }
 
       // Set authorization header
       aiApiClient.defaults.headers.Authorization = `Bearer ${authData.accessToken}`;
+      console.log('🔐 Set Authorization header for AI request');
 
-      // Prepare API request
-      const request: AIPromptRequest = {
+      // Prepare API request format that server expects
+      const request = {
         message: message.trim(),
-        isSpeech: isSpeech,
+        isSpeech: isSpeech
       };
 
-      console.log('🤖 Sending AI request:', { message: request.message, isSpeech: request.isSpeech });
+      console.log('🤖 Sending AI request to /api/public/ai/prompt:', { message: message.trim(), isSpeech });
 
       // Call AI API
-      const response = await aiApiClient.post<AIPromptResponse>(
+      const response = await aiApiClient.post<{message: string, audioBase64?: string}>(
         '/api/public/ai/prompt',
         request
       );
@@ -58,7 +66,9 @@ export class AIChatRepositoryImpl implements IChatRepository {
 
       console.log('✅ AI response received:', { 
         hasMessage: !!aiMessage.content, 
-        hasAudio: !!aiMessage.audioBase64 
+        contentLength: aiMessage.content.length,
+        hasAudio: aiMessage.hasAudio,
+        audioSize: aiMessage.audioBase64?.length || 0
       });
 
       return aiMessage;
@@ -66,12 +76,32 @@ export class AIChatRepositoryImpl implements IChatRepository {
     } catch (error: any) {
       console.error('❌ AI API Error:', error);
       
-      // Handle specific errors
-      if (error.response?.status === 401) {
-        throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      if (error.response) {
+        console.error('❌ Server Response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          url: error.config?.url
+        });
+        
+        if (error.response.status === 401) {
+          throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        } else if (error.response.status === 403) {
+          throw new Error('Không có quyền truy cập AI chat. Vui lòng đăng nhập lại hoặc liên hệ quản trị viên.');
+        } else if (error.response.status === 500) {
+          throw new Error('Server gặp lỗi nội bộ. API endpoint có thể không đúng hoặc server chưa sẵn sàng.');
+        } else if (error.response.status === 404) {
+          throw new Error('API endpoint không tồn tại. Vui lòng kiểm tra cấu hình.');
+        }
+        
+        throw new Error(`Lỗi server (${error.response.status}): ${error.response.data?.message || error.response.statusText}`);
+      } else if (error.request) {
+        console.error('❌ Network Error:', error.request);
+        throw new Error('Không thể kết nối tới server. Vui lòng kiểm tra mạng.');
+      } else {
+        console.error('❌ Request Setup Error:', error.message);
+        throw new Error('Lỗi cấu hình request: ' + error.message);
       }
-      
-      throw new Error(error.response?.data?.message || 'Không thể kết nối với AI. Vui lòng thử lại.');
     }
   }
 

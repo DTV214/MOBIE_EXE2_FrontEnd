@@ -179,6 +179,10 @@ const HospitalListScreen = () => {
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCorrect={false}
+            autoCapitalize="words"
+            underlineColorAndroid="transparent"
+            allowFontScaling={false}
           />
         </View>
       </View>

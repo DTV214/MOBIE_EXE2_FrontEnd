@@ -48,16 +48,26 @@ export const useUserStore = create<UserState>((set, get) => ({
     } catch (error: any) {
       console.error('Error fetching profile:', error);
       
-      // Check if it's an authentication error (401/403)
-      const isAuthError = error?.response?.status === 401 || 
-                         error?.response?.status === 403 ||
-                         error?.message?.includes('Network Error');
+      // Enhanced error handling
+      const status = error?.response?.status;
+      const isAuthError = status === 401 || status === 403;
+      const isUserNotFound = status === 404 && error?.response?.data?.message?.includes('Account not found');
       
-      if (isAuthError) {
-        // Clear user data on auth error
+      if (isAuthError || isUserNotFound) {
+        // Clear user data and stored tokens for auth errors or deleted accounts
+        console.log(isUserNotFound ? 'User account deleted or not found - clearing stored data' : 'Authentication failed - user needs to login');
+        
+        // Clear stored token
+        try {
+          const AsyncStorage = await import('@react-native-async-storage/async-storage');
+          await AsyncStorage.default.removeItem('accessToken');
+          console.log('Cleared stored access token');
+        } catch (clearError) {
+          console.error('Failed to clear stored token:', clearError);
+        }
+        
         set({ user: null, healthProfile: null, loading: false, error: null });
         // Don't set error message to avoid UI disruption on login flow
-        console.log('Authentication failed - user needs to login');
       } else {
         set({
           loading: false,

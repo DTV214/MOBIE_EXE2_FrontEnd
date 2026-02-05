@@ -303,6 +303,10 @@ const ForumDetailScreen = () => {
             value={commentText}
             onChangeText={setCommentText}
             multiline
+            autoCorrect={false}
+            autoCapitalize="sentences"
+            underlineColorAndroid="transparent"
+            allowFontScaling={false}
           />
         </View>
         <TouchableOpacity

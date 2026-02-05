@@ -3,27 +3,21 @@ import axios from 'axios';
 
 // Create dedicated axios instance for AI APIs
 const aiApiClient = axios.create({
-  baseURL: 'http://14.225.207.221:8080',
-  timeout: 30000, // AI responses might take longer
+  baseURL: 'http://14.225.207.221:8080', // Production server (accessible from emulator)
+  timeout: 45000, // Increased timeout for emulator network latency
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-// Request interceptor for authentication
+// Request interceptor for logging
 aiApiClient.interceptors.request.use(
   (config) => {
-    // Get token from storage (will implement in repository)
-    const token = null; // TODO: Get from auth storage
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     console.log(`[AI API] ${config.method?.toUpperCase()} ${config.url}`, {
       params: config.params,
       data: config.data,
+      headers: config.headers.Authorization ? 'Bearer [TOKEN]' : 'No Auth',
     });
     return config;
   },

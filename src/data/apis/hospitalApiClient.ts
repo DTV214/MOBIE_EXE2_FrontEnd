@@ -3,8 +3,8 @@ import axios from 'axios';
 
 // Create dedicated axios instance for hospital APIs
 const hospitalApiClient = axios.create({
-  baseURL: 'http://14.225.207.221:8080',
-  timeout: 15000, // Increase timeout for external server
+  baseURL: 'http://14.225.207.221:8080', // Production server IP (works from emulator)
+  timeout: 20000, // Increased timeout for external server and emulator latency
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
