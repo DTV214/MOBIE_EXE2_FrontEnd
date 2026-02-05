@@ -1,4 +1,4 @@
-import React, {  useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,17 @@ import {
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
-import { useDailyLogStore } from '../../viewmodels/useDailyLogStore';
+import { useMealTrackingStore } from '../../viewmodels/useMealTrackingStore';
 import {
   ChevronLeft,
   Plus,
   Trash2,
   Utensils,
-
   Flame,
-  Zap,
+  Minus,
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -26,42 +26,61 @@ const MealTrackingScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  // Lấy tham số từ DailyLogScreen
-  const { date, type, mealLogId } = route.params;
+  // SỬ DỤNG OPTIONAL CHAINING ĐỂ CHỐNG CRASH KHI VÀO TỪ NAVBAR
+  const mealLogId = route.params?.mealLogId;
+  const type = route.params?.type || 'Bữa Ăn';
+  const date = route.params?.date;
 
-  const { mealLogs, isLoading } = useDailyLogStore();
+  const { mealFoods, isLoading, fetchMealFoods, updateQuantity, removeFood } =
+    useMealTrackingStore();
 
-  // Tìm dữ liệu của bữa ăn hiện tại từ Store
-  const currentMeal = useMemo(() => {
-    return mealLogs.find(m => m.id === mealLogId);
-  }, [mealLogs, mealLogId]);
+  useEffect(() => {
+    if (mealLogId) {
+      fetchMealFoods(mealLogId);
+    } else {
+      // Nếu lỡ bấm nhầm từ Navbar mà không có ID, báo lỗi nhẹ nhàng
+      console.warn('--- [UI] MealTrackingScreen opened without mealLogId');
+    }
+  }, [mealLogId, fetchMealFoods]);
+
+  const summary = useMemo(() => {
+    return mealFoods.reduce(
+      (acc, item) => ({
+        calories: acc.calories + (item.calories || 0),
+      }),
+      { calories: 0 },
+    );
+  }, [mealFoods]);
 
   const getMealTitle = () => {
-    switch (type) {
-      case 'BREAKFAST':
-        return 'Bữa Sáng';
-      case 'LUNCH':
-        return 'Bữa Trưa';
-      case 'DINNER':
-        return 'Bữa Tối';
-      default:
-        return 'Bữa Ăn';
-    }
+    if (type === 'BREAKFAST') return 'Bữa Sáng';
+    if (type === 'LUNCH') return 'Bữa Trưa';
+    if (type === 'DINNER') return 'Bữa Tối';
+    if (type === 'SNACK') return 'Bữa Phụ';
+    return type;
   };
 
-  if (isLoading) {
+  // NẾU KHÔNG CÓ ID, HIỂN THỊ FALLBACK UI THAY VÌ CRASH
+  if (!mealLogId) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-white`}>
-        <ActivityIndicator size="large" color="#7FB069" />
-      </View>
+      <SafeAreaView style={tw`flex-1 bg-white items-center justify-center p-6`}>
+        <Utensils size={64} color="#D1D5DB" />
+        <Text style={tw`text-gray-400 mt-4 text-center font-bold text-lg`}>
+          Vui lòng chọn một bữa ăn cụ thể từ Nhật Ký để xem chi tiết.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={tw`mt-6 bg-primary px-8 py-3 rounded-full`}
+        >
+          <Text style={tw`text-white font-bold`}>Quay lại</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={tw`flex-1 bg-white`}>
       <StatusBar barStyle="dark-content" />
-
-      {/* Custom Header */}
       <View
         style={tw`px-6 py-4 flex-row items-center justify-between border-b border-gray-50`}
       >
@@ -74,12 +93,11 @@ const MealTrackingScreen = () => {
         <Text style={tw`text-lg font-black text-brandDark`}>
           {getMealTitle()}
         </Text>
-        <View style={tw`w-10 h-10`} /> {/* Khoảng trống cân bằng */}
+        <View style={tw`w-10`} />
       </View>
 
       <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
         <View style={tw`px-6 pt-6`}>
-          {/* Summary Card */}
           <LinearGradient
             colors={['#7FB069', '#6A9A5A']}
             style={tw`p-6 rounded-[32px] shadow-lg mb-8`}
@@ -89,10 +107,10 @@ const MealTrackingScreen = () => {
                 <Text
                   style={tw`text-white/80 text-xs font-bold uppercase mb-1`}
                 >
-                  Tổng Năng Lượng
+                  Năng lượng bữa ăn
                 </Text>
                 <Text style={tw`text-white text-3xl font-black`}>
-                  {currentMeal?.totalCalories || 0}{' '}
+                  {summary.calories}{' '}
                   <Text style={tw`text-lg font-medium`}>kcal</Text>
                 </Text>
               </View>
@@ -100,17 +118,8 @@ const MealTrackingScreen = () => {
                 <Flame size={32} color="white" />
               </View>
             </View>
-
-            <View
-              style={tw`flex-row justify-between mt-6 pt-6 border-t border-white/20`}
-            >
-              <NutrientInfo label="P" value={currentMeal?.totalProtein || 0} />
-              <NutrientInfo label="C" value={currentMeal?.totalCarbs || 0} />
-              <NutrientInfo label="F" value={currentMeal?.totalFat || 0} />
-            </View>
           </LinearGradient>
 
-          {/* Food List Section */}
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <Text style={tw`text-lg font-black text-brandDark`}>
               Món đã chọn
@@ -128,74 +137,75 @@ const MealTrackingScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {!currentMeal?.items || currentMeal.items.length === 0 ? (
+          {isLoading ? (
+            <ActivityIndicator color="#7FB069" style={tw`mt-10`} />
+          ) : mealFoods.length === 0 ? (
             <View
               style={tw`bg-gray-50 rounded-[24px] p-10 items-center border border-dashed border-gray-200`}
             >
-              <Utensils size={40} color="#9CA3AF" strokeWidth={1.5} />
+              <Utensils size={40} color="#9CA3AF" />
               <Text style={tw`text-gray-400 font-medium mt-4 text-center`}>
-                Chưa có món ăn nào.{'\n'}Hãy nhấn "Thêm món" để bắt đầu.
+                Bữa ăn đang trống.{'\n'}Hãy thêm món ăn ngay!
               </Text>
             </View>
           ) : (
-            currentMeal.items.map((item: any, index: number) => (
-              <FoodItemCard key={index} item={item} />
+            mealFoods.map(item => (
+              <View
+                key={item.id}
+                style={tw`bg-white border border-gray-100 p-4 rounded-2xl mb-3 shadow-sm flex-row items-center`}
+              >
+                <View style={tw`flex-1`}>
+                  <Text style={tw`text-brandDark font-bold text-sm`}>
+                    {item.foodItemName}
+                  </Text>
+                  <Text style={tw`text-primary text-xs font-bold`}>
+                    {item.calories} kcal
+                  </Text>
+                </View>
+                <View
+                  style={tw`flex-row items-center bg-gray-50 rounded-xl p-1 mr-3`}
+                >
+                  <TouchableOpacity
+                    onPress={() => updateQuantity(item.id, item.quantity - 1)}
+                    style={tw`p-1`}
+                  >
+                    <Minus
+                      size={14}
+                      color={item.quantity > 1 ? '#7FB069' : '#D1D5DB'}
+                    />
+                  </TouchableOpacity>
+                  <Text style={tw`mx-2 font-black text-brandDark text-xs`}>
+                    {item.quantity}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                    style={tw`p-1`}
+                  >
+                    <Plus size={14} color="#7FB069" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  onPress={() =>
+                    Alert.alert('Xác nhận', 'Xóa món này?', [
+                      { text: 'Hủy' },
+                      {
+                        text: 'Xóa',
+                        style: 'destructive',
+                        onPress: () => removeFood(item.id),
+                      },
+                    ])
+                  }
+                  style={tw`p-2 bg-red-50 rounded-lg`}
+                >
+                  <Trash2 size={16} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
             ))
           )}
-
-          {/* AI Advice Section */}
-          <View
-            style={tw`mt-8 p-5 bg-blue-50 rounded-[24px] border border-blue-100 flex-row`}
-          >
-            <Zap size={20} color="#3B82F6" />
-            <View style={tw`ml-3 flex-1`}>
-              <Text style={tw`text-blue-800 font-bold mb-1`}>
-                Gợi ý từ Lành AI
-              </Text>
-              <Text style={tw`text-blue-600/80 text-xs leading-4`}>
-                Bữa ăn này có lượng đạm khá tốt. Bạn nên bổ sung thêm một chút
-                chất xơ từ rau xanh để cân bằng tiêu hóa nhé!
-              </Text>
-            </View>
-          </View>
-
-          <View style={tw`h-10`} />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-// --- Sub-components ---
-
-const NutrientInfo = ({ label, value }: { label: string; value: number }) => (
-  <View style={tw`items-center`}>
-    <Text style={tw`text-white/60 text-[10px] font-bold mb-1`}>{label}</Text>
-    <Text style={tw`text-white font-bold`}>{value}g</Text>
-  </View>
-);
-
-const FoodItemCard = ({ item }: { item: any }) => (
-  <View
-    style={tw`flex-row items-center bg-white border border-gray-100 p-4 rounded-2xl mb-3 shadow-sm`}
-  >
-    <View
-      style={tw`w-12 h-12 bg-gray-50 rounded-xl items-center justify-center mr-4`}
-    >
-      <Text style={tw`text-xl`}>🥗</Text>
-    </View>
-    <View style={tw`flex-1`}>
-      <Text style={tw`text-brandDark font-bold text-sm`}>
-        {item.foodName || 'Tên món ăn'}
-      </Text>
-      <Text style={tw`text-gray-400 text-xs`}>
-        {item.quantity || 1} phần • {item.calories || 0} kcal
-      </Text>
-    </View>
-    <TouchableOpacity style={tw`p-2 bg-red-50 rounded-lg`}>
-      <Trash2 size={16} color="#EF4444" />
-    </TouchableOpacity>
-  </View>
-);
 
 export default MealTrackingScreen;

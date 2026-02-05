@@ -13,12 +13,13 @@ import {
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import { useDailyLogStore } from '../../viewmodels/useDailyLogStore';
+import { useExerciseStore } from '../../viewmodels/useExerciseStore'; // Store tập luyện
 import {
   CalendarDays,
   Plus,
   Flame,
   Footprints,
-  Droplets,
+
   ChevronRight,
   TrendingUp,
   Info,
@@ -28,13 +29,17 @@ import {
   MessageSquare,
   Edit2,
   Trash2,
+  Zap,
 } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { MealType } from '../../../domain/entities/MealLog';
+import ExercisePickerModal from './ExercisePickerModal';
 
 const DailyLogScreen = () => {
   const navigation = useNavigation<any>();
+
+  // --- Store Data ---
   const {
     currentLog,
     mealLogs,
@@ -48,12 +53,19 @@ const DailyLogScreen = () => {
     deleteMealLog,
   } = useDailyLogStore();
 
-  // --- UI State ---
-  const [isModalVisible, setModalVisible] = useState(false);
+  const { exerciseLogs, fetchExerciseLogs, deleteExercise, updateExercise } =
+    useExerciseStore();
+
+  // --- UI Control State ---
+  const [isMealModalVisible, setMealModalVisible] = useState(false);
+  const [isExerciseModalVisible, setExerciseModalVisible] = useState(false);
+  const [isExerciseEditVisible, setExerciseEditVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingMealId, setEditingMealId] = useState<number | null>(null);
+  const [selectedExercise, setSelectedExercise] = useState<any>(null);
+  const [editDuration, setEditDuration] = useState('');
 
-  // --- Custom Time Picker State (Thay thế native picker) ---
+  // --- Custom Time Picker State ---
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
   const [tempHour, setTempHour] = useState('08');
   const [tempMinute, setTempMinute] = useState('00');
@@ -68,14 +80,20 @@ const DailyLogScreen = () => {
     fetchLogByDate(selectedDate);
   }, [selectedDate, fetchLogByDate]);
 
+  useEffect(() => {
+    if (currentLog?.id) {
+      fetchExerciseLogs(currentLog.id);
+    }
+  }, [currentLog?.id, fetchExerciseLogs]);
+
   const totalMealCalories = useMemo(() => {
     return mealLogs.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0);
   }, [mealLogs]);
 
-  // Helper đảm bảo luôn có số 0 ở đầu
   const pad = (n: string | number) => n.toString().padStart(2, '0');
 
-  const openAddModal = () => {
+  // --- Logic Xử lý Bữa ăn ---
+  const openAddMealModal = () => {
     setIsEditMode(false);
     setEditingMealId(null);
     setFormMealType(MealType.BREAKFAST);
@@ -83,24 +101,22 @@ const DailyLogScreen = () => {
     const now = new Date();
     setTempHour(pad(now.getHours()));
     setTempMinute(pad(now.getMinutes()));
-    setModalVisible(true);
+    setMealModalVisible(true);
   };
 
-  const openEditModal = (meal: any) => {
+  const openEditMealModal = (meal: any) => {
     setIsEditMode(true);
     setEditingMealId(meal.id);
     setFormMealType(meal.mealType);
     setFormNotes(meal.notes || '');
-    // Tách giờ từ chuỗi HH:mm:ss của Backend
     const [h, m] = meal.loggedTime.split(':');
     setTempHour(pad(h));
     setTempMinute(pad(m));
-    setModalVisible(true);
+    setMealModalVisible(true);
   };
 
   const handleSubmitMeal = async () => {
     try {
-      // Ép kiểu format chuẩn HH:mm:00 để Backend không lỗi 500
       const finalTime = `${pad(tempHour)}:${pad(tempMinute)}:00`;
       const params = {
         mealType: formMealType,
@@ -110,15 +126,35 @@ const DailyLogScreen = () => {
 
       if (isEditMode && editingMealId) {
         await updateMealLog(editingMealId, params);
-        Alert.alert('Thành công', 'Đã cập nhật bữa ăn.');
       } else {
         await addMealLog(params);
-        Alert.alert('Thành công', 'Đã thêm bữa ăn mới!');
       }
-      setModalVisible(false);
+      setMealModalVisible(false);
     } catch (error: any) {
-      // Hiển thị lỗi Null hoặc lỗi parse từ Server
       Alert.alert('Lỗi', error.response?.data?.message || error.message);
+    }
+  };
+
+  // --- Logic Xử lý Tập luyện ---
+  const openEditExercise = (log: any) => {
+    setSelectedExercise(log);
+    setEditDuration(log.duration.toString());
+    setExerciseEditVisible(true);
+  };
+
+  const handleUpdateExercise = async () => {
+    if (selectedExercise && currentLog?.id) {
+      try {
+        await updateExercise(selectedExercise.id, {
+          duration: parseInt(editDuration),
+          exerciseTypeId: selectedExercise.exerciseId,
+          dailyLogId: currentLog.id,
+        });
+        setExerciseEditVisible(false);
+        Alert.alert('Thành công', 'Đã cập nhật thời gian tập luyện.');
+      } catch  {
+        Alert.alert('Lỗi', 'Không thể cập nhật bài tập.');
+      }
     }
   };
 
@@ -168,7 +204,12 @@ const DailyLogScreen = () => {
     );
   };
 
-  if (isLoading && !isModalVisible) {
+  if (
+    isLoading &&
+    !isMealModalVisible &&
+    !isExerciseModalVisible &&
+    !isExerciseEditVisible
+  ) {
     return (
       <View style={tw`flex-1 justify-center items-center bg-white`}>
         <ActivityIndicator size="large" color="#7FB069" />
@@ -198,13 +239,14 @@ const DailyLogScreen = () => {
       <ScrollView style={tw`flex-1 mt-6`} showsVerticalScrollIndicator={false}>
         {renderHorizontalCalendar()}
 
-        {/* Debug & Info Area - Dùng icon Info */}
+        {/* Debug Log Info Area */}
         <View
           style={tw`mx-6 mb-4 p-2 bg-blue-50 rounded-lg border border-blue-100 flex-row items-center`}
         >
           <Info size={14} color="#1D4ED8" />
           <Text style={tw`ml-2 text-[10px] text-blue-700 font-bold`}>
-            LOG ID: {currentLog?.id || 'N/A'} | CALO: {totalMealCalories} kcal
+            LOG ID: {currentLog?.id || 'N/A'} | CALO NẠP: {totalMealCalories}{' '}
+            kcal
           </Text>
         </View>
 
@@ -225,7 +267,7 @@ const DailyLogScreen = () => {
           </View>
         ) : (
           <View style={tw`px-6`}>
-            {/* Calories Card */}
+            {/* Calories Progress Card */}
             <LinearGradient
               colors={['#1F2937', '#111827']}
               style={tw`p-6 rounded-[32px] shadow-xl mb-6`}
@@ -262,25 +304,25 @@ const DailyLogScreen = () => {
               </View>
             </LinearGradient>
 
-            {/* Quick Stats Area - Dùng icon Footprints, Droplets */}
+            {/* Quick Statistics */}
             <View style={tw`flex-row justify-between mb-6`}>
               <StatCard
                 icon={<Footprints size={20} color="#3B82F6" />}
                 label="Bước chân"
-                value={currentLog.steps || 0}
+                value={currentLog.steps}
                 unit="steps"
                 color="blue"
               />
               <StatCard
-                icon={<Droplets size={20} color="#06B6D4" />}
-                label="Nước uống"
-                value="1.2"
-                unit="L"
-                color="cyan"
+                icon={<Zap size={20} color="#F97316" />}
+                label="Tiêu hao"
+                value={currentLog.totalCaloriesOut}
+                unit="kcal"
+                color="orange"
               />
             </View>
 
-            {/* Nutrition Area - Dùng icon TrendingUp */}
+            {/* Macronutrients Analysis */}
             <View style={tw`bg-gray-50 p-5 rounded-[24px] mb-6`}>
               <View style={tw`flex-row items-center mb-4`}>
                 <TrendingUp size={18} color="#7FB069" />
@@ -310,13 +352,13 @@ const DailyLogScreen = () => {
               </View>
             </View>
 
-            {/* Meal List */}
+            {/* --- MEAL DETAILS SECTION --- */}
             <View style={tw`flex-row justify-between items-center mb-4`}>
               <Text style={tw`text-lg font-black text-brandDark`}>
                 Bữa ăn chi tiết
               </Text>
               <TouchableOpacity
-                onPress={openAddModal}
+                onPress={openAddMealModal}
                 style={tw`bg-primary/10 p-2 rounded-full`}
               >
                 <Plus size={20} color="#7FB069" />
@@ -324,20 +366,19 @@ const DailyLogScreen = () => {
             </View>
 
             {mealLogs.length === 0 ? (
-              <TouchableOpacity
-                onPress={openAddModal}
-                style={tw`bg-gray-50 p-8 rounded-3xl items-center border-2 border-dashed border-gray-200`}
+              <View
+                style={tw`bg-gray-50 p-8 rounded-3xl items-center border-2 border-dashed border-gray-200 mb-6`}
               >
                 <Utensils size={32} color="#9CA3AF" />
-                <Text style={tw`text-gray-400 font-bold mt-2`}>
-                  Bấm dấu cộng để thêm bữa ăn
+                <Text style={tw`text-gray-400 font-bold mt-2 text-center`}>
+                  Bấm (+) để thêm bữa ăn
                 </Text>
-              </TouchableOpacity>
+              </View>
             ) : (
               mealLogs.map(meal => (
                 <View
                   key={meal.id}
-                  style={tw`bg-gray-50 p-4 rounded-3xl mb-3 flex-row items-center shadow-sm`}
+                  style={tw`bg-white border border-gray-100 p-4 rounded-2xl mb-3 flex-row items-center shadow-sm`}
                 >
                   <TouchableOpacity
                     style={tw`flex-row items-center flex-1`}
@@ -349,42 +390,91 @@ const DailyLogScreen = () => {
                     }
                   >
                     <View
-                      style={tw`w-10 h-10 bg-white rounded-xl items-center justify-center mr-3 shadow-sm`}
+                      style={tw`w-10 h-10 bg-gray-50 rounded-xl items-center justify-center mr-3`}
                     >
                       <Utensils size={18} color="#7FB069" />
                     </View>
                     <View style={tw`flex-1`}>
-                      <Text style={tw`text-brandDark font-bold`}>
+                      <Text style={tw`text-brandDark font-bold text-sm`}>
                         {meal.mealType} - {meal.loggedTime}
                       </Text>
-                      <Text
-                        style={tw`text-gray-400 text-[10px]`}
-                        numberOfLines={1}
-                      >
+                      <Text style={tw`text-gray-400 text-[10px]`}>
                         {meal.notes || 'Không có ghi chú'}
                       </Text>
                     </View>
                   </TouchableOpacity>
                   <View
-                    style={tw`flex-row items-center ml-2 border-l border-gray-200 pl-2`}
+                    style={tw`flex-row items-center ml-2 border-l border-gray-100 pl-2`}
                   >
                     <TouchableOpacity
-                      onPress={() => openEditModal(meal)}
-                      style={tw`p-2 mr-1`}
+                      onPress={() => openEditMealModal(meal)}
+                      style={tw`p-2`}
                     >
                       <Edit2 size={16} color="#3B82F6" />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => {
-                        Alert.alert('Xác nhận', 'Xóa nhật ký này?', [
-                          { text: 'Hủy' },
-                          {
-                            text: 'Xóa',
-                            style: 'destructive',
-                            onPress: () => deleteMealLog(meal.id),
-                          },
-                        ]);
-                      }}
+                      onPress={() => deleteMealLog(meal.id)}
+                      style={tw`p-2`}
+                    >
+                      <Trash2 size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+
+            {/* --- EXERCISE DETAILS SECTION --- */}
+            <View style={tw`flex-row justify-between items-center mb-4 mt-6`}>
+              <Text style={tw`text-lg font-black text-brandDark`}>
+                Tập luyện chi tiết
+              </Text>
+              <TouchableOpacity
+                onPress={() => setExerciseModalVisible(true)}
+                style={tw`bg-blue-500/10 p-2 rounded-full`}
+              >
+                <Plus size={20} color="#3B82F6" />
+              </TouchableOpacity>
+            </View>
+
+            {exerciseLogs.length === 0 ? (
+              <View
+                style={tw`bg-gray-50 p-8 rounded-3xl items-center border-2 border-dashed border-gray-200 mb-10`}
+              >
+                <Zap size={32} color="#9CA3AF" />
+                <Text style={tw`text-gray-400 font-bold mt-2 text-center`}>
+                  Bấm (+) để thêm hoạt động tập luyện
+                </Text>
+              </View>
+            ) : (
+              exerciseLogs.map(log => (
+                <View
+                  key={log.id}
+                  style={tw`bg-white border border-gray-100 p-4 rounded-2xl mb-3 flex-row items-center shadow-sm`}
+                >
+                  <View
+                    style={tw`w-10 h-10 bg-blue-50 rounded-xl items-center justify-center mr-3`}
+                  >
+                    <Zap size={18} color="#3B82F6" />
+                  </View>
+                  <View style={tw`flex-1`}>
+                    <Text style={tw`text-brandDark font-bold text-sm`}>
+                      {log.activity}
+                    </Text>
+                    <Text style={tw`text-gray-400 text-[10px]`}>
+                      {log.duration} phút • {log.caloriesOut} kcal tiêu hao
+                    </Text>
+                  </View>
+                  <View
+                    style={tw`flex-row items-center ml-2 border-l border-gray-100 pl-2`}
+                  >
+                    <TouchableOpacity
+                      onPress={() => openEditExercise(log)}
+                      style={tw`p-2`}
+                    >
+                      <Edit2 size={16} color="#3B82F6" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => deleteExercise(log.id)}
                       style={tw`p-2`}
                     >
                       <Trash2 size={16} color="#EF4444" />
@@ -398,8 +488,63 @@ const DailyLogScreen = () => {
         )}
       </ScrollView>
 
-      {/* --- FORM MODAL (Add & Update) --- */}
-      <Modal visible={isModalVisible} animationType="slide" transparent>
+      {/* --- ALL MODALS --- */}
+      <ExercisePickerModal
+        isVisible={isExerciseModalVisible}
+        onClose={() => setExerciseModalVisible(false)}
+      />
+
+      {/* Popup chỉnh sửa thời gian tập luyện */}
+      <Modal visible={isExerciseEditVisible} transparent animationType="fade">
+        <View style={tw`flex-1 bg-black/50 justify-center px-10`}>
+          <View style={tw`bg-white rounded-[32px] p-8 shadow-2xl`}>
+            <Text
+              style={tw`text-xl font-black text-brandDark mb-2 text-center`}
+            >
+              {selectedExercise?.activity}
+            </Text>
+            <Text style={tw`text-gray-400 text-center mb-6`}>
+              Cập nhật thời gian tập luyện
+            </Text>
+            <View
+              style={tw`flex-row items-center justify-center bg-gray-50 p-4 rounded-2xl mb-8`}
+            >
+              <TextInput
+                keyboardType="numeric"
+                style={tw`text-3xl font-black text-blue-600 mr-2`}
+                value={editDuration}
+                onChangeText={setEditDuration}
+                autoFocus
+              />
+              <Text style={tw`text-lg font-bold text-gray-400`}>phút</Text>
+            </View>
+            <View style={tw`flex-row`}>
+              <TouchableOpacity
+                onPress={() => setExerciseEditVisible(false)}
+                style={tw`flex-1 py-4`}
+              >
+                <Text style={tw`text-gray-400 font-bold text-center`}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleUpdateExercise}
+                style={tw`flex-1`}
+              >
+                <LinearGradient
+                  colors={['#3B82F6', '#2563EB']}
+                  style={tw`py-4 rounded-2xl shadow-lg`}
+                >
+                  <Text style={tw`text-white font-bold text-center`}>
+                    Lưu thay đổi
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Form Bữa ăn */}
+      <Modal visible={isMealModalVisible} animationType="slide" transparent>
         <View style={tw`flex-1 bg-black/50 justify-end`}>
           <View style={tw`bg-white rounded-t-[40px] p-8 pb-10 shadow-2xl`}>
             <View style={tw`flex-row justify-between items-center mb-8`}>
@@ -407,14 +552,12 @@ const DailyLogScreen = () => {
                 {isEditMode ? 'Cập nhật bữa ăn' : 'Thêm bữa ăn mới'}
               </Text>
               <TouchableOpacity
-                onPress={() => setModalVisible(false)}
+                onPress={() => setMealModalVisible(false)}
                 style={tw`p-2 bg-gray-100 rounded-full`}
               >
                 <X size={20} color="#1F2937" />
               </TouchableOpacity>
             </View>
-
-            {/* Loại Bữa Ăn */}
             <Text
               style={tw`text-gray-400 font-bold text-[10px] uppercase mb-3`}
             >
@@ -446,12 +589,10 @@ const DailyLogScreen = () => {
                 </TouchableOpacity>
               ))}
             </View>
-
-            {/* Custom JS Time Picker (Thay thế Clock Picker Native) */}
             <Text
               style={tw`text-gray-400 font-bold text-[10px] uppercase mb-3`}
             >
-              Thời gian ghi nhận (Nhấn để chọn)
+              Thời gian ghi nhận
             </Text>
             <TouchableOpacity
               onPress={() => setTimePickerVisible(!isTimePickerVisible)}
@@ -463,7 +604,6 @@ const DailyLogScreen = () => {
               </Text>
               <ChevronRight size={16} color="#9CA3AF" />
             </TouchableOpacity>
-
             {isTimePickerVisible && (
               <View
                 style={tw`bg-gray-50 p-4 rounded-2xl mb-6 flex-row justify-around items-center`}
@@ -491,8 +631,6 @@ const DailyLogScreen = () => {
                 </View>
               </View>
             )}
-
-            {/* Ghi chú */}
             <Text
               style={tw`text-gray-400 font-bold text-[10px] uppercase mb-3`}
             >
@@ -511,21 +649,14 @@ const DailyLogScreen = () => {
                 onChangeText={setFormNotes}
               />
             </View>
-
-            <TouchableOpacity onPress={handleSubmitMeal} disabled={isLoading}>
+            <TouchableOpacity onPress={handleSubmitMeal}>
               <LinearGradient
                 colors={['#7FB069', '#6A9A5A']}
-                style={tw`py-4 rounded-2xl items-center shadow-lg ${
-                  isLoading ? 'opacity-50' : ''
-                }`}
+                style={tw`py-4 rounded-2xl items-center shadow-lg`}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={tw`text-white font-bold text-lg`}>
-                    {isEditMode ? 'Lưu thay đổi' : 'Khởi tạo ngay'}
-                  </Text>
-                )}
+                <Text style={tw`text-white font-bold text-lg`}>
+                  {isEditMode ? 'Lưu thay đổi' : 'Khởi tạo ngay'}
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -535,7 +666,7 @@ const DailyLogScreen = () => {
   );
 };
 
-// --- Sub-components (Đã sửa lỗi Unused Area) ---
+// --- Helper Components ---
 const StatCard = ({ icon, label, value, unit, color }: any) => (
   <View
     style={tw`bg-white border border-gray-100 p-4 rounded-3xl w-[48%] shadow-sm`}

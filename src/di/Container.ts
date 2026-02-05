@@ -62,6 +62,19 @@ import { GetPaymentMethods } from '../domain/usecases/GetPaymentMethods';
 import { ProcessPayment } from '../domain/usecases/ProcessPayment';
 import { GetTransactionById } from '../domain/usecases/GetTransactionById';
 import { MealLogRepositoryImpl } from '../data/repositories/daily-log/meal-log/MealLogRepositoryImpl';
+import { GetFoodItemsUseCase } from '../domain/usecases/food/GetFoodItems';
+import { GetMealFoodsByMealIdUseCase } from '../domain/usecases/meal-food/GetMealFoodsByMealId';
+import { AddFoodToMealUseCase } from '../domain/usecases/meal-food/AddFoodToMeal';
+import { UpdateMealFoodQuantityUseCase } from '../domain/usecases/meal-food/UpdateMealFoodQuantity';
+import { RemoveFoodFromMealUseCase } from '../domain/usecases/meal-food/RemoveFoodFromMeal';
+import { FoodRepositoryImpl } from '../data/repositories/food/FoodRepositoryImpl';
+import { MealFoodRepositoryImpl } from '../data/repositories/meal-food/MealFoodRepositoryImpl';
+import { ExerciseRepositoryImpl } from '../data/repositories/exercise/ExerciseRepositoryImpl';
+import { GetExerciseTypesUseCase } from '../domain/usecases/exercise/GetExerciseTypesUseCase';
+import { GetExercisesByDailyLogIdUseCase } from '../domain/usecases/exercise/GetExercisesByDailyLogIdUseCase';
+import { AddExerciseLogUseCase } from '../domain/usecases/exercise/AddExerciseLogUseCase';
+import { UpdateExerciseLogUseCase } from '../domain/usecases/exercise/UpdateExerciseLogUseCase';
+import { RemoveExerciseLogUseCase } from '../domain/usecases/exercise/RemoveExerciseLogUseCase';
 
 // --- 3. REPOSITORY INSTANTIATION ---
 const userRepository = new MockUserRepository();
@@ -77,6 +90,9 @@ const subscriptionRepository = new MockSubscriptionRepository();
 const authRepository = new AuthRepositoryImpl();
 const dailyLogRepository = new DailyLogRepositoryImpl();
 const mealLogRepository = new MealLogRepositoryImpl();
+const foodRepository = new FoodRepositoryImpl();
+const mealFoodRepository = new MealFoodRepositoryImpl();
+const exerciseRepository = new ExerciseRepositoryImpl();
 
 // --- 4. USE CASE INSTANTIATION & EXPORT ---
 
@@ -87,12 +103,41 @@ export const getDailyLogByDateUseCase = new GetDailyLogByDateUseCase(
 export const createDailyLogUseCase = new CreateDailyLogUseCase(
   dailyLogRepository,
 );
+
 export const getMealLogsByDailyLogIdUseCase =
   new GetMealLogsByDailyLogIdUseCase(mealLogRepository);
 export const createMealLogUseCase = new CreateMealLogUseCase(mealLogRepository);
 export const updateMealLogUseCase = new UpdateMealLogUseCase(mealLogRepository);
 export const deleteMealLogUseCase = new DeleteMealLogUseCase(mealLogRepository);
+// --- Meal & Food ---
+export const getFoodItemsUseCase = new GetFoodItemsUseCase(foodRepository);
+export const getMealFoodsByMealIdUseCase = new GetMealFoodsByMealIdUseCase(
+  mealFoodRepository,
+);
+export const addFoodToMealUseCase = new AddFoodToMealUseCase(
+  mealFoodRepository,
+);
+export const updateMealFoodQuantityUseCase = new UpdateMealFoodQuantityUseCase(
+  mealFoodRepository,
+);
+export const removeFoodFromMealUseCase = new RemoveFoodFromMealUseCase(
+  mealFoodRepository,
+);
 
+export const getExerciseTypesUseCase = new GetExerciseTypesUseCase(
+  exerciseRepository,
+);
+export const getExercisesByDailyLogIdUseCase =
+  new GetExercisesByDailyLogIdUseCase(exerciseRepository);
+export const addExerciseLogUseCase = new AddExerciseLogUseCase(
+  exerciseRepository,
+);
+export const updateExerciseLogUseCase = new UpdateExerciseLogUseCase(
+  exerciseRepository,
+);
+export const removeExerciseLogUseCase = new RemoveExerciseLogUseCase(
+  exerciseRepository,
+);
 // --- Auth ---
 export const loginWithGoogleUseCase = new LoginWithGoogle(authRepository);
 
