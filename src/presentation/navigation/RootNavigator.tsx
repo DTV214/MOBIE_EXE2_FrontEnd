@@ -28,7 +28,8 @@ import EditProfileScreen from '../screens/Profile_Screen/EditProfileScreen';
 import SurveyScreen from '../screens/Survey_Screen/SurveyScreen';
 import DailyLogScreen from '../screens/Tracking_Daily_Screen/DailyLogScreen';
 import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
-
+import MyPostsScreen from '../screens/Forum_Screen/MyPostsScreen';
+import EditPostScreen from '../screens/Forum_Screen/EditPostScreen';
 const Stack = createNativeStackNavigator();
 
 const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
@@ -41,14 +42,12 @@ const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-
       {/* ✅ MỚI: Thêm màn hình Survey vào Stack */}
       <Stack.Screen name="Survey" component={SurveyScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       {/* Main Flow */}
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Main" component={MainTabNavigator} />
-
       {/* Sub-screens */}
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="HospitalDetail" component={HospitalDetailScreen} />
@@ -60,15 +59,16 @@ const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="AddFood" component={AddFoodScreen} />
       <Stack.Screen name="CreatePost" component={CreatePostScreen} />
       <Stack.Screen name="AIChat" component={AIChatScreen} />
-
       {/* Subscription Flow */}
       <Stack.Screen name="ChoosePlan" component={ChoosePlanScreen} />
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
-
       <Stack.Screen name="DailyLog" component={DailyLogScreen} />
       <Stack.Screen name="MealTracking" component={MealTrackingScreen} />
+      <Stack.Screen name="MyPosts" component={MyPostsScreen} />
+      {/* Đảm bảo tên đúng là MyPosts */}
+      <Stack.Screen name="EditPost" component={EditPostScreen} />
     </Stack.Navigator>
   );
 };

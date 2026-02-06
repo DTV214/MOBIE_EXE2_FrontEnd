@@ -2,6 +2,7 @@
 
 export interface User {
   id: number;
+  
   email: string;
   fullName: string; // Đổi từ 'fullname' của BE sang 'fullName' cho chuẩn JS/TS
   role: string; // Ví dụ: "USER", "ADMIN"
