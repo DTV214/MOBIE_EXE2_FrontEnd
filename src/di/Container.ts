@@ -75,6 +75,11 @@ import { GetPlanById } from '../domain/usecases/GetPlanById';
 import { GetPaymentMethods } from '../domain/usecases/GetPaymentMethods';
 import { ProcessPayment } from '../domain/usecases/ProcessPayment';
 import { GetTransactionById } from '../domain/usecases/GetTransactionById';
+import { CommentRepositoryImpl } from '../data/repositories/comment/CommentRepositoryImpl';
+import { GetCommentsByPostId } from '../domain/usecases/comment/GetCommentsByPostId';
+import { CreateComment } from '../domain/usecases/comment/CreateComment';
+import { UpdateComment } from '../domain/usecases/comment/UpdateComment';
+import { DeleteComment } from '../domain/usecases/comment/DeleteComment';
 
 // --- 3. REPOSITORY INSTANTIATION ---
 const authRepository = new AuthRepositoryImpl();
@@ -92,6 +97,7 @@ const chatRepository = new MockChatRepository();
 const hospitalRepository = new MockHospitalRepository();
 const subscriptionRepository = new MockSubscriptionRepository();
 
+const commentRepository = new CommentRepositoryImpl();
 // --- 4. USE CASE INSTANTIATION & EXPORT ---
 
 // Auth
@@ -190,3 +196,10 @@ export const processPaymentUseCase = new ProcessPayment(subscriptionRepository);
 export const getTransactionByIdUseCase = new GetTransactionById(
   subscriptionRepository,
 );
+
+export const getCommentsByPostIdUseCase = new GetCommentsByPostId(
+  commentRepository,
+);
+export const createCommentUseCase = new CreateComment(commentRepository);
+export const updateCommentUseCase = new UpdateComment(commentRepository);
+export const deleteCommentUseCase = new DeleteComment(commentRepository);

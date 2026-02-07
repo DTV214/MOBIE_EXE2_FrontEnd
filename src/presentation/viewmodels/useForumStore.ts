@@ -7,44 +7,39 @@ import {
   createPostUseCase,
   uploadMediaUseCase,
   getPostByIdUseCase,
-  getMyPostsUseCase, // MỚI: Use Case lấy bài viết cá nhân
-  updatePostUseCase, // MỚI: Use Case cập nhật bài viết
-  deletePostUseCase, // MỚI: Use Case xóa bài viết
+  getMyPostsUseCase,
+  updatePostUseCase,
+  deletePostUseCase,
 } from '../../di/Container';
 
 interface ForumState {
-  // --- Data State ---
   posts: Post[];
-  myPosts: Post[]; // MỚI: Danh sách bài viết riêng của tài khoản
+  myPosts: Post[];
   currentPost: Post | null;
   page: number;
   totalPages: number;
   totalElements: number;
   search: string;
 
-  // --- UI Status State ---
   isLoading: boolean;
   isRefreshing: boolean;
   isPublishing: boolean;
   isDetailLoading: boolean;
-  isActionLoading: boolean; // MỚI: Trạng thái khi đang Xóa hoặc Sửa
+  isActionLoading: boolean;
   error: string | null;
 
-  // --- Actions ---
   fetchPosts: (page?: number, size?: number, search?: string) => Promise<void>;
   refreshPosts: () => Promise<void>;
   loadMore: () => Promise<void>;
   createPost: (content: string, files: any[]) => Promise<void>;
   fetchPostById: (id: number) => Promise<void>;
-
-  /** * Lấy danh sách bài viết cá nhân qua Token Authorization
-   *
-   */
   fetchMyPosts: () => Promise<void>;
 
-  /** * Cập nhật bài viết hiện có
-   *
+  /** * CẬP NHẬT: Logic Thả tim (Like/Unlike)
+   * Đảm bảo mỗi người chỉ được tác động 1 đơn vị tim lên bài viết
    */
+  toggleLike: (postId: number) => Promise<void>;
+
   updatePost: (
     id: number,
     content: string,
@@ -53,9 +48,6 @@ interface ForumState {
     accountId: number,
   ) => Promise<void>;
 
-  /** * Xóa bài viết và cập nhật UI ngay lập tức
-   *
-   */
   deletePostById: (id: number) => Promise<void>;
 
   clearCurrentPost: () => void;
@@ -77,7 +69,6 @@ export const useForumStore = create<ForumState>((set, get) => ({
   isActionLoading: false,
   error: null,
 
-  // 1. Lấy danh sách bài viết chung (Newsfeed)
   fetchPosts: async (page = 0, size = 10, search = '') => {
     set({ isLoading: page === 0, error: null, search });
     try {
@@ -95,7 +86,6 @@ export const useForumStore = create<ForumState>((set, get) => ({
     }
   },
 
-  // 2. Lấy danh sách bài viết cá nhân
   fetchMyPosts: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -109,7 +99,62 @@ export const useForumStore = create<ForumState>((set, get) => ({
     }
   },
 
-  // 3. Logic Đăng bài 2 Giai đoạn
+  /** * CẢI TIẾN LOGIC: Thả tim/Bỏ tim (Optimistic UI)
+   * Sử dụng flag 'isLiked' (nếu có trong Entity) hoặc logic so sánh để toggle
+   */
+  toggleLike: async (postId: number) => {
+    const { posts, currentPost } = get();
+
+    // Lưu lại trạng thái cũ để rollback nếu API lỗi
+    const previousPosts = [...posts];
+    const previousDetail = currentPost ? { ...currentPost } : null;
+
+    // Xác định bài viết cần cập nhật trong danh sách
+    const updatedPosts = posts.map(p => {
+      if (p.id === postId) {
+        // Nếu isLiked = true thì giảm 1 (unlike), ngược lại tăng 1 (like)
+        const isLiked = p.isLiked;
+        return {
+          ...p,
+          heart: isLiked ? Math.max(0, p.heart - 1) : p.heart + 1,
+          isLiked: !isLiked,
+        };
+      }
+      return p;
+    });
+
+    // Cập nhật tương tự cho bài viết đang xem chi tiết (nếu có)
+    const updatedDetail =
+      currentPost && currentPost.id === postId
+        ? {
+            ...currentPost,
+            heart: currentPost.isLiked
+              ? Math.max(0, currentPost.heart - 1)
+              : currentPost.heart + 1,
+            isLiked: !currentPost.isLiked,
+          }
+        : currentPost;
+
+    // Cập nhật UI ngay lập tức
+    set({ posts: updatedPosts, currentPost: updatedDetail });
+
+    try {
+      const targetPost = updatedPosts.find(p => p.id === postId);
+      if (targetPost) {
+        await updatePostUseCase.execute(postId, {
+          content: targetPost.content,
+          mediaUrls: targetPost.mediaUrls,
+          heart: targetPost.heart,
+          accountId: targetPost.authorId,
+        });
+      }
+    } catch (err) {
+      // Hoàn tác dữ liệu nếu server trả lỗi
+      set({ posts: previousPosts, currentPost: previousDetail });
+      console.error('Lỗi khi cập nhật lượt thích:', err);
+    }
+  },
+
   createPost: async (content, files) => {
     set({ isPublishing: true, error: null });
     try {
@@ -127,7 +172,6 @@ export const useForumStore = create<ForumState>((set, get) => ({
     }
   },
 
-  // 4. Logic Cập nhật bài viết
   updatePost: async (id, content, mediaUrls, heart, accountId) => {
     set({ isActionLoading: true, error: null });
     try {
@@ -137,8 +181,10 @@ export const useForumStore = create<ForumState>((set, get) => ({
         heart,
         accountId,
       });
-      // Làm mới dữ liệu sau khi sửa thành công
       await Promise.all([get().fetchPosts(0), get().fetchMyPosts()]);
+      if (get().currentPost?.id === id) {
+        await get().fetchPostById(id);
+      }
     } catch (err: any) {
       set({ error: err.message || 'Lỗi khi cập nhật bài viết' });
       throw err;
@@ -147,12 +193,10 @@ export const useForumStore = create<ForumState>((set, get) => ({
     }
   },
 
-  // 5. Logic Xóa bài viết (Optimistic UI)
   deletePostById: async (id: number) => {
     set({ isActionLoading: true });
     try {
       await deletePostUseCase.execute(id);
-      // Cập nhật UI ngay lập tức không cần tải lại trang
       set(state => ({
         myPosts: state.myPosts.filter(p => p.id !== id),
         posts: state.posts.filter(p => p.id !== id),

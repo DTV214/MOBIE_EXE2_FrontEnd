@@ -11,6 +11,7 @@ export interface Post {
   authorId: number;
   authorName: string;
   authorEmail: string;
+  isLiked: boolean;
 
   // Các trường bổ sung từ API Detail
   totalComments: number;
