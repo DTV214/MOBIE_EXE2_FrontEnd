@@ -3,15 +3,11 @@ import axios from 'axios';
 import { IAuthRepository } from '../../../domain/repositories/auth/IAuthRepository';
 import { User } from '../../../domain/entities/User';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 import { AccountResponseDTO } from '../../dtos/account/AccountResponseDTO';
 import axiosInstance from '../../apis/axiosInstance';
 
 export class AuthRepositoryImpl implements IAuthRepository {
-  private apiUrl =
-    Platform.OS === 'android'
-      ? 'http://14.225.207.221:8080/api/auth/google/android-callback'
-      : 'http://14.225.207.221:8080/api/auth/google/android-callback';
+  private apiUrl = 'http://14.225.207.221:8080/api/auth/google/android-callback'; // Production server IP (works from emulator)
 
   async loginWithGoogle(idToken: string): Promise<string> {
     try {
@@ -48,7 +44,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
   async getProfile(): Promise<User> {
     try {
       console.log('--- [STEP 6] Calling Backend API: Get User Profile ---');
-      console.log('Endpoint: http://10.0.2.2:8080/api/accounts/profile');
+      console.log('Using API endpoint: /api/accounts/profile');
 
       const response = await axiosInstance.get<AccountResponseDTO>(
         '/api/accounts/profile',

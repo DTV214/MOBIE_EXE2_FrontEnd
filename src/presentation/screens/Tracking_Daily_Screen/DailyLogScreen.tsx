@@ -647,6 +647,10 @@ const DailyLogScreen = () => {
                 placeholder="Cảm nhận hôm nay?"
                 value={formNotes}
                 onChangeText={setFormNotes}
+                autoCorrect={false}
+                autoCapitalize="sentences"
+                underlineColorAndroid="transparent"
+                allowFontScaling={false}
               />
             </View>
             <TouchableOpacity onPress={handleSubmitMeal}>

@@ -9,12 +9,13 @@ import { FoodRepositoryImpl } from '../data/repositories/food/FoodRepositoryImpl
 import { MealFoodRepositoryImpl } from '../data/repositories/meal-food/MealFoodRepositoryImpl';
 import { ExerciseRepositoryImpl } from '../data/repositories/exercise/ExerciseRepositoryImpl';
 import { ForumRepositoryImpl } from '../data/repositories/forum/ForumRepositoryImpl';
+import { AIChatRepositoryImpl } from '../data/repositories/AIChatRepositoryImpl';
+import { HospitalRepositoryImpl } from '../data/repositories/hospital/HospitalRepositoryImpl';
 
 // Mocks (Dùng cho các module chưa có API thật)
 import { MockUserRepository } from '../data/repositories/MockUserRepository';
 import { StorageRepository } from '../data/repositories/StorageRepository';
 import { MockHealthRepository } from '../data/repositories/MockHealthRepository';
-import { MockChatRepository } from '../data/repositories/MockChatRepository';
 import { MockHospitalRepository } from '../data/repositories/MockHospitalRepository';
 import { MockSubscriptionRepository } from '../data/repositories/MockSubscriptionRepository';
 
@@ -70,6 +71,7 @@ import { GetSuggestedQuestions } from '../domain/usecases/GetSuggestedQuestions'
 import { SearchFacilities } from '../domain/usecases/SearchFacilities';
 import { SuggestFacilitiesBySymptoms } from '../domain/usecases/SuggestFacilitiesBySymptoms';
 import { GetFacilityById } from '../domain/usecases/GetFacilityById';
+import { GetAllHospitals } from '../domain/usecases/hospital/GetAllHospitals';
 import { GetAllPlans } from '../domain/usecases/GetAllPlans';
 import { GetPlanById } from '../domain/usecases/GetPlanById';
 import { GetPaymentMethods } from '../domain/usecases/GetPaymentMethods';
@@ -82,21 +84,25 @@ import { UpdateComment } from '../domain/usecases/comment/UpdateComment';
 import { DeleteComment } from '../domain/usecases/comment/DeleteComment';
 
 // --- 3. REPOSITORY INSTANTIATION ---
+// Real API Repositories (Core functionality)
 const authRepository = new AuthRepositoryImpl();
 const dailyLogRepository = new DailyLogRepositoryImpl();
 const mealLogRepository = new MealLogRepositoryImpl();
 const foodRepository = new FoodRepositoryImpl();
 const mealFoodRepository = new MealFoodRepositoryImpl();
 const exerciseRepository = new ExerciseRepositoryImpl();
-const forumRepository = new ForumRepositoryImpl();
+const realForumRepository = new ForumRepositoryImpl();
 
+// Mock Repositories (Legacy/Backup features)
 const userRepository = new MockUserRepository();
 const storageRepository = new StorageRepository();
 const healthRepository = new MockHealthRepository();
-const chatRepository = new MockChatRepository();
-const hospitalRepository = new MockHospitalRepository();
+const chatRepository = new AIChatRepositoryImpl(); // ✅ Real AI API
+const hospitalRepository = new MockHospitalRepository(); // Legacy hospital/facility features
+const realHospitalRepository = new HospitalRepositoryImpl(); // ✅ New Hospital API
 const subscriptionRepository = new MockSubscriptionRepository();
 
+// Comment Repository
 const commentRepository = new CommentRepositoryImpl();
 // --- 4. USE CASE INSTANTIATION & EXPORT ---
 
@@ -158,13 +164,13 @@ export const removeExerciseLogUseCase = new RemoveExerciseLogUseCase(
 
 // --- Forum (Real Flow cho Quản lý bài viết) ---
 //
-export const getAllPostsUseCase = new GetAllPosts(forumRepository);
-export const createPostUseCase = new CreatePost(forumRepository);
-export const uploadMediaUseCase = new UploadMedia(forumRepository);
-export const getPostByIdUseCase = new GetPostById(forumRepository);
-export const getMyPostsUseCase = new GetMyPosts(forumRepository);
-export const updatePostUseCase = new UpdatePost(forumRepository);
-export const deletePostUseCase = new DeletePost(forumRepository);
+export const getAllPostsUseCase = new GetAllPosts(realForumRepository);
+export const createPostUseCase = new CreatePost(realForumRepository);
+export const uploadMediaUseCase = new UploadMedia(realForumRepository);
+export const getPostByIdUseCase = new GetPostById(realForumRepository);
+export const getMyPostsUseCase = new GetMyPosts(realForumRepository);
+export const updatePostUseCase = new UpdatePost(realForumRepository);
+export const deletePostUseCase = new DeletePost(realForumRepository);
 
 // Health Insights
 export const getDailyProgressUseCase = new GetDailyProgress(healthRepository);
@@ -180,7 +186,8 @@ export const getSuggestedQuestionsUseCase = new GetSuggestedQuestions(
   chatRepository,
 );
 
-// Hospital & Facilities
+// --- Hospital ---
+export const getAllHospitalsUseCase = new GetAllHospitals(realHospitalRepository);
 export const searchFacilitiesUseCase = new SearchFacilities(hospitalRepository);
 export const suggestFacilitiesBySymptomsUseCase =
   new SuggestFacilitiesBySymptoms(hospitalRepository);

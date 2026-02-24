@@ -2,13 +2,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SEVER_URL = 'http://14.225.207.221:8080';
-// Thay đổi baseURL thành địa chỉ IP máy tính của bạn nếu chạy trên thiết bị thật (VD: 192.168.1.x:8080)
-const BASE_URL = SEVER_URL || 'http://10.0.2.2:8080';
+// Use production server IP since localhost is not running
+const BASE_URL = 'http://14.225.207.221:8080';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Increased timeout for external server
   headers: {
     'Content-Type': 'application/json',
   },

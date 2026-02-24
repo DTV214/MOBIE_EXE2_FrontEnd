@@ -79,6 +79,10 @@ const AddFoodScreen = () => {
             style={tw`flex-1 ml-3 text-brandDark font-medium`}
             value={query}
             onChangeText={handleSearch}
+            autoCorrect={false}
+            autoCapitalize="words"
+            underlineColorAndroid="transparent"
+            allowFontScaling={false}
           />
         </View>
       </View>

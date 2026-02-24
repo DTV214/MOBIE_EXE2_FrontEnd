@@ -219,7 +219,10 @@ const ForumDetailScreen = () => {
                 {currentPost.mediaUrls.map((url, index) => (
                   <View
                     key={index}
-                    style={{ width: width, paddingHorizontal: 24 }}
+                    style={[
+                      { width: width },
+                      tw`px-6`
+                    ]}
                   >
                     <Image
                       source={{ uri: url }}

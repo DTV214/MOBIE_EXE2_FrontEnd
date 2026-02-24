@@ -14,9 +14,10 @@ import tw from '../../utils/tailwind';
 
 // Import các màn hình
 import DashboardScreen from '../screens/Dashboard_Screen/DashboardScreen';
-// import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
-import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
-import AIChatListScreen from '../screens/AI_Screen/AIChatListScreen';
+import MealTrackingScreen from '../screens/Meal_Screen/MealTrackingScreen';
+// import HospitalSearchScreen from '../screens/Hospital_Screen/HospitalSearchScreen';
+import HospitalListScreen from '../screens/Hospital_Screen/HospitalListScreen';
+import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
 import ForumScreen from '../screens/Forum_Screen/ForumScreen';
 import DailyLogScreen from '../screens/Tracking_Daily_Screen/DailyLogScreen';
 
@@ -63,11 +64,11 @@ const MainTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Trang chủ" component={DashboardScreen} />
-      <Tab.Screen name="Bệnh viện" component={HospitalSearchScreen} />
-      {/* <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} /> */}
+      <Tab.Screen name="Bệnh viện" component={HospitalListScreen} />
+      <Tab.Screen name="Bữa ăn" component={MealTrackingScreen} />
       <Tab.Screen name="Nhật ký" component={DailyLogScreen} />
       <Tab.Screen name="Diễn đàn" component={ForumScreen} />
-      <Tab.Screen name="AI" component={AIChatListScreen} />
+      <Tab.Screen name="AI" component={AIChatScreen} />
       {/* Tab này giờ sẽ hiển thị đúng ProfileScreen (có BMI, tên user) */}
       <Tab.Screen name="Hồ sơ" component={ProfileScreen} />
     </Tab.Navigator>
