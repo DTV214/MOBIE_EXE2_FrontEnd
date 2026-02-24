@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   Home,
   Hospital,
-  // Utensils,
+  Utensils,
   Bot,
   User,
   LayoutList,
@@ -36,8 +36,8 @@ const renderTabBarIcon =
         return <Home size={size} color={color} />;
       case 'Bệnh viện':
         return <Hospital size={size} color={color} />;
-      // case 'Bữa ăn':
-      //   return <Utensils size={size} color={color} />;
+      case 'Bữa ăn':
+        return <Utensils size={size} color={color} />;
       case 'Diễn đàn':
         return <LayoutList size={size} color={color} />;
       case 'AI':

@@ -4,11 +4,11 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from '../../../utils/tailwind';
 import { useMealTrackingStore } from '../../viewmodels/useMealTrackingStore';
 import {

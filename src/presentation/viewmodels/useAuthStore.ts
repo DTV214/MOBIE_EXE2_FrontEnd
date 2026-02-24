@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>(set => ({
       console.log('1. Đã Sign Out Google SDK');
 
       // 2. Xóa Token trong bộ nhớ máy (AsyncStorage) qua Repository
-      const { authRepository } = require('../../di/Container');
+      const { authRepository } = await import('../../di/Container');
       await authRepository.logout();
       console.log('2. Đã xóa Access Token trong AsyncStorage');
 

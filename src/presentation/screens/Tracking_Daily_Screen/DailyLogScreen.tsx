@@ -4,13 +4,13 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   StatusBar,
   Alert,
   Modal,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from '../../../utils/tailwind';
 import { useDailyLogStore } from '../../viewmodels/useDailyLogStore';
 import { useExerciseStore } from '../../viewmodels/useExerciseStore'; // Store tập luyện
@@ -146,7 +146,7 @@ const DailyLogScreen = () => {
     if (selectedExercise && currentLog?.id) {
       try {
         await updateExercise(selectedExercise.id, {
-          duration: parseInt(editDuration),
+          duration: parseInt(editDuration, 10),
           exerciseTypeId: selectedExercise.exerciseId,
           dailyLogId: currentLog.id,
         });

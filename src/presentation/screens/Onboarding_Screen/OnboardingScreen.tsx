@@ -8,7 +8,6 @@ import {
   Dimensions,
   Animated,
   StatusBar,
-  Image,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import { Heart, Brain, Apple, ArrowRight, Leaf } from 'lucide-react-native';
@@ -16,7 +15,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { completeOnboardingUseCase } from '../../../di/Container';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+// const { width, height } = Dimensions.get('window'); // height not currently used
 
 // Data giả cho onboarding slides - sau này có thể lấy từ API
 const ONBOARDING_SLIDES = [
@@ -178,7 +178,7 @@ const OnboardingScreen = () => {
     </View>
   );
 
-  const renderItem = ({ item, index }: any) => {
+  const renderItem = ({ item: _, index }: any) => {
     switch (index) {
       case 0:
         return renderSlide1();

@@ -15,7 +15,7 @@ import { HospitalRepositoryImpl } from '../data/repositories/hospital/HospitalRe
 // Mocks (Dùng cho các module chưa có API thật)
 import { MockUserRepository } from '../data/repositories/MockUserRepository';
 import { StorageRepository } from '../data/repositories/StorageRepository';
-import { MockHealthRepository } from '../data/repositories/MockHealthRepository';
+import { EnhancedHealthRepository } from '../data/repositories/EnhancedHealthRepository'; // ✅ Thay MockHealthRepository
 import { MockHospitalRepository } from '../data/repositories/MockHospitalRepository';
 import { MockSubscriptionRepository } from '../data/repositories/MockSubscriptionRepository';
 
@@ -96,7 +96,7 @@ const realForumRepository = new ForumRepositoryImpl();
 // Mock Repositories (Legacy/Backup features)
 const userRepository = new MockUserRepository();
 const storageRepository = new StorageRepository();
-const healthRepository = new MockHealthRepository();
+const healthRepository = new EnhancedHealthRepository(); // ✅ Sử dụng Enhanced thay vì Mock
 const chatRepository = new AIChatRepositoryImpl(); // ✅ Real AI API
 const hospitalRepository = new MockHospitalRepository(); // Legacy hospital/facility features
 const realHospitalRepository = new HospitalRepositoryImpl(); // ✅ New Hospital API
@@ -210,3 +210,6 @@ export const getCommentsByPostIdUseCase = new GetCommentsByPostId(
 export const createCommentUseCase = new CreateComment(commentRepository);
 export const updateCommentUseCase = new UpdateComment(commentRepository);
 export const deleteCommentUseCase = new DeleteComment(commentRepository);
+
+// Export repositories for direct access
+export { authRepository };

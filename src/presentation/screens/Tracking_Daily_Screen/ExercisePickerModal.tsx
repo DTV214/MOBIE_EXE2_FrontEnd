@@ -4,11 +4,11 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from '../../../utils/tailwind';
 import { X, ChevronRight, Zap } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -42,7 +42,7 @@ const ExercisePickerModal = ({ isVisible, onClose }: any) => {
     if (currentLog?.id && selectedType) {
       try {
         await addExercise({
-          duration: parseInt(duration),
+          duration: parseInt(duration, 10),
           exerciseTypeId: selectedType.id,
           dailyLogId: currentLog.id,
         });

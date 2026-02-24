@@ -12,13 +12,9 @@ import tw from '../../../utils/tailwind';
 import {
   ChevronLeft,
   MapPin,
-  Star,
   Phone,
-  Clock,
   Navigation,
-  Building2,
   Hospital as HospitalIcon,
-  Dumbbell,
   MoreVertical,
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -38,7 +34,7 @@ const HospitalDetailScreen = () => {
     if (!routeHospital && routeHospital?.id) {
       loadHospital();
     }
-  }, [routeHospital]);
+  }, [routeHospital?.id]);
 
   const loadHospital = async () => {
     try {

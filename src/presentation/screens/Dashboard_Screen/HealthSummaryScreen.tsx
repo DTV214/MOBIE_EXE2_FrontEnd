@@ -12,11 +12,10 @@ import {
   ChevronLeft,
   Bell,
   Moon,
-  SaltShaker,
+  Activity,
   Apple,
-  Carrot,
-  Running,
-  Bed,
+  Utensils,
+  Timer,
   Bot,
   MessageCircle,
 } from 'lucide-react-native';
@@ -78,13 +77,13 @@ const HealthSummaryScreen = () => {
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'nutrition':
-        return Carrot;
+        return Utensils;
       case 'activity':
-        return Running;
+        return Activity;
       case 'rest':
-        return Bed;
+        return Timer;
       default:
-        return Carrot;
+        return Utensils;
     }
   };
 
@@ -184,10 +183,10 @@ const HealthSummaryScreen = () => {
                   >
                     {rec.type === 'sleep' ? (
                       <Moon size={24} color="#8B5CF6" />
-                    ) : rec.type === 'nutrition' && rec.icon === 'salt' ? (
-                      <SaltShaker size={24} color="#F97316" />
+                    ) : rec.type === 'nutrition' ? (
+                      <Apple size={24} color="#F97316" />
                     ) : (
-                      <Apple size={24} color="#7FB069" />
+                      <Activity size={24} color="#7FB069" />
                     )}
                   </View>
                   <View style={tw`flex-1`}>
@@ -286,7 +285,7 @@ const HealthSummaryScreen = () => {
 
           {/* Chat with AI Coach Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('AI')}
+            onPress={() => navigation.navigate('AIChat')}
             activeOpacity={0.9}
             style={tw`mb-6`}
           >
