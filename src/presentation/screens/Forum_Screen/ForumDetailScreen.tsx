@@ -1,12 +1,18 @@
 // src/presentation/screens/Forum_Screen/ForumDetailScreen.tsx
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   StatusBar,
+  Image,
+  ActivityIndicator,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import {
@@ -15,306 +21,386 @@ import {
   MessageCircle,
   Share2,
   Bookmark,
-  Send,
   MoreVertical,
-  Flame,
+  Clock,
+  Verified,
+  Send,
+  X,
+  Camera,
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import {
-  getPostByIdUseCase,
-  likePostUseCase,
-  getCommentsByPostIdUseCase,
-  createCommentUseCase,
-} from '../../../di/Container';
-import { Post, Comment, UserProfile } from '../../../domain/entities/Post';
+import { launchImageLibrary, Asset } from 'react-native-image-picker';
+import { useForumStore } from '../../viewmodels/useForumStore';
+import { useCommentStore } from '../../viewmodels/useCommentStore';
+import CommentItem from '../../components/CommentItem';
+import { Comment } from '../../../domain/entities/Comment';
+import Toast from 'react-native-toast-message';
+
+const { width } = Dimensions.get('window');
+const MAX_IMAGES = 3;
 
 const ForumDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params || {};
 
-  const [post, setPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  // 1. Kết nối Stores - Lấy thêm toggleLike để xử lý thả tim
+  const {
+    currentPost,
+    isDetailLoading,
+    fetchPostById,
+    clearCurrentPost,
+    toggleLike,
+  } = useForumStore();
+
+  const {
+    comments,
+    fetchComments,
+    addComment,
+    editComment,
+    isActionLoading,
+    isLoading: isCommentsLoading,
+  } = useCommentStore();
+
   const [commentText, setCommentText] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState<Asset[]>([]);
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
 
   useEffect(() => {
-    loadData();
-  }, [postId]);
-
-  const loadData = async () => {
-    try {
-      const [postData, commentsData] = await Promise.all([
-        getPostByIdUseCase.execute(postId),
-        getCommentsByPostIdUseCase.execute(postId),
-      ]);
-      setPost(postData);
-      setComments(commentsData);
-    } catch (error) {
-      console.error('Error loading post detail:', error);
-    } finally {
-      setLoading(false);
+    if (postId) {
+      fetchPostById(postId);
+      fetchComments(postId);
     }
-  };
+    return () => clearCurrentPost();
+  }, [postId, fetchPostById, fetchComments, clearCurrentPost]);
 
-  const handleLike = async () => {
-    if (!post) return;
-    try {
-      await likePostUseCase.execute(post.id, post.isLiked);
-      setPost({ ...post, isLiked: !post.isLiked, likes: post.isLiked ? post.likes - 1 : post.likes + 1 });
-    } catch (error) {
-      console.error('Error liking post:', error);
-    }
-  };
-
-  const handleComment = async () => {
-    if (!commentText.trim() || !post) return;
-
-    try {
-      // Mock current user
-      const currentUser: UserProfile = {
-        id: 'current-user',
-        name: 'Bạn',
-        role: 'user',
-      };
-
-      const newComment = await createCommentUseCase.execute({
-        postId: post.id,
-        author: currentUser,
-        content: commentText,
+  const handlePickImage = async () => {
+    if (selectedFiles.length >= MAX_IMAGES) {
+      Toast.show({
+        type: 'info',
+        text1: `Tối đa ${MAX_IMAGES} ảnh cho mỗi bình luận.`,
       });
-
-      setComments([...comments, newComment]);
-      setCommentText('');
-      setPost({ ...post, comments: post.comments + 1 });
-    } catch (error) {
-      console.error('Error creating comment:', error);
+      return;
+    }
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      selectionLimit: MAX_IMAGES - selectedFiles.length,
+      quality: 0.7,
+    });
+    if (result.assets) {
+      setSelectedFiles([...selectedFiles, ...result.assets]);
     }
   };
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Vừa xong';
-    if (diffInHours < 24) return `${diffInHours} giờ trước`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} ngày trước`;
-  };
+  const handleSendComment = async () => {
+    if (!commentText.trim() && selectedFiles.length === 0) return;
 
-  const getRoleColor = (role?: string) => {
-    switch (role) {
-      case 'expert':
-      case 'doctor':
-        return '#7FB069';
-      case 'trainer':
-        return '#3B82F6';
-      default:
-        return '#9CA3AF';
+    try {
+      const fileData = selectedFiles.map(asset => ({
+        uri: asset.uri,
+        type: asset.type,
+        name: asset.fileName,
+      }));
+
+      if (editingComment) {
+        await editComment(
+          editingComment.id,
+          commentText,
+          editingComment.mediaUrls || [],
+        );
+      } else {
+        await addComment({
+          content: commentText,
+          files: fileData,
+          postId: postId,
+          parentCommentId: replyTo?.id,
+        });
+        fetchPostById(postId);
+      }
+      cancelAction();
+    } catch (err) {
+      console.log('Lỗi gửi bình luận:', err);
     }
   };
 
-  if (loading || !post) {
+  const cancelAction = () => {
+    setReplyTo(null);
+    setEditingComment(null);
+    setCommentText('');
+    setSelectedFiles([]);
+  };
+
+  if (isDetailLoading || !currentPost) {
     return (
-      <View style={tw`flex-1 bg-background items-center justify-center`}>
-        <Text style={tw`text-textSub`}>Đang tải...</Text>
+      <View style={tw`flex-1 bg-white items-center justify-center`}>
+        <ActivityIndicator color="#7FB069" size="large" />
       </View>
     );
   }
 
+  const authorAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    currentPost.authorName,
+  )}&background=7FB069&color=fff&bold=true`;
+
   return (
-    <View style={tw`flex-1 bg-background`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={tw`flex-1 bg-white`}>
+      <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-100 flex-row items-center justify-between`}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ChevronLeft size={24} color="#1F2937" />
-        </TouchableOpacity>
-        <Text style={tw`text-lg font-bold text-brandDark`}>Chi tiết bài viết</Text>
-        <TouchableOpacity>
-          <Bookmark
-            size={22}
-            color={post.isSaved ? '#7FB069' : '#9CA3AF'}
-            fill={post.isSaved ? '#7FB069' : 'none'}
-          />
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={tw`flex-1`}
+      >
+        <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
+          {/* Header */}
+          <View
+            style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-50 flex-row items-center justify-between`}
+          >
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={tw`p-2 -ml-2`}
+            >
+              <ChevronLeft size={24} color="#1F2937" />
+            </TouchableOpacity>
+            <Text
+              style={tw`text-base font-black text-brandDark uppercase tracking-tighter`}
+            >
+              Chi tiết bài viết
+            </Text>
+            <TouchableOpacity style={tw`p-2 -mr-2`}>
+              <Bookmark size={22} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
-        <View style={tw`px-6 pt-6`}>
           {/* Author Info */}
-          <View style={tw`flex-row items-center justify-between mb-6`}>
-            <View style={tw`flex-row items-center flex-1`}>
-              <View style={tw`w-12 h-12 bg-gray-200 rounded-full mr-3`} />
-              <View style={tw`flex-1`}>
+          <View
+            style={tw`px-6 pt-6 pb-4 flex-row items-center justify-between`}
+          >
+            <View style={tw`flex-row items-center`}>
+              <Image
+                source={{ uri: authorAvatar }}
+                style={tw`w-12 h-12 rounded-full border-2 border-[#7FB069]/20`}
+              />
+              <View style={tw`ml-3`}>
                 <View style={tw`flex-row items-center`}>
-                  <Text style={tw`text-brandDark font-semibold text-base mr-2`}>
-                    {post.author.name}
+                  <Text style={tw`text-brandDark font-bold text-base mr-1`}>
+                    {currentPost.authorName}
                   </Text>
-                  {post.author.roleLabel && (
-                    <View
-                      style={tw`px-2 py-0.5 rounded-full`}
-                      style={{ backgroundColor: `${getRoleColor(post.author.role)}20` }}
-                    >
-                      <Text
-                        style={tw`text-xs font-semibold`}
-                        style={{ color: getRoleColor(post.author.role) }}
-                      >
-                        {post.author.roleLabel}
-                      </Text>
-                    </View>
-                  )}
+                  <Verified size={14} color="#7FB069" fill="#7FB069" />
                 </View>
-                <Text style={tw`text-textSub text-xs`}>
-                  {post.author.specialty && `${post.author.specialty} • `}
-                  {formatTimeAgo(post.createdAt)}
-                </Text>
+                <View style={tw`flex-row items-center mt-0.5`}>
+                  <Clock size={10} color="#9CA3AF" />
+                  <Text style={tw`text-gray-400 text-[10px] ml-1`}>
+                    {currentPost.createdAt}
+                  </Text>
+                </View>
               </View>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity style={tw`bg-gray-50 p-2 rounded-full`}>
               <MoreVertical size={18} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
 
-          {/* Content */}
-          <Text style={tw`text-brandDark text-base leading-6 mb-4`}>
-            {post.content}
-          </Text>
+          <View style={tw`px-6 mb-6`}>
+            <Text style={tw`text-brandDark text-[17px] leading-7 font-medium`}>
+              {currentPost.content}
+            </Text>
+          </View>
 
-          {/* Media */}
-          {post.media && post.media.length > 0 && (
-            <View style={tw`bg-gray-100 rounded-xl h-64 mb-6 items-center justify-center`}>
-              <Text style={tw`text-textSub text-xs`}>
-                {post.media.length} {post.media[0].type === 'image' ? 'hình ảnh' : 'video'}
-              </Text>
+          {/* Media bài viết */}
+          {currentPost.mediaUrls && currentPost.mediaUrls.length > 0 && (
+            <View style={tw`mb-8`}>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                style={tw`flex-row`}
+              >
+                {currentPost.mediaUrls.map((url, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      { width: width },
+                      tw`px-6`
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: url }}
+                      style={tw`w-full h-80 rounded-[32px] bg-gray-100 shadow-lg`}
+                      resizeMode="cover"
+                    />
+                    <View
+                      style={tw`absolute bottom-4 right-10 bg-black/50 px-3 py-1 rounded-full`}
+                    >
+                      <Text style={tw`text-white text-[10px] font-bold`}>
+                        {index + 1} / {currentPost.mediaUrls.length}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           )}
 
-          {/* Hashtags */}
-          {post.hashtags.length > 0 && (
-            <View style={tw`flex-row flex-wrap mb-6`}>
-              {post.hashtags.map((tag, index) => (
-                <View
-                  key={index}
-                  style={tw`bg-primary/10 px-3 py-1 rounded-full mr-2 mb-2`}
-                >
-                  <Text style={tw`text-primary font-semibold text-xs`}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Stats/Tips */}
-          {post.stats && (
-            <View style={tw`bg-primaryLight/30 rounded-xl p-4 mb-6`}>
-              {post.stats.caloriesBurned && (
-                <View style={tw`flex-row items-center mb-2`}>
-                  <Flame size={16} color="#F97316" />
-                  <Text style={tw`text-textSub text-sm ml-2`}>
-                    Calo đã đốt: {post.stats.caloriesBurned} kcal
-                  </Text>
-                </View>
-              )}
-              {post.stats.duration && (
-                <View style={tw`flex-row items-center mb-2`}>
-                  <Text style={tw`text-textSub text-sm`}>
-                    Thời gian: {post.stats.duration}
-                  </Text>
-                </View>
-              )}
-              {post.stats.nutritionTip && (
-                <Text style={tw`text-textSub text-sm`}>
-                  Gợi ý định dưỡng: {post.stats.nutritionTip}
-                </Text>
-              )}
-            </View>
-          )}
-
-          {/* Engagement Bar */}
-          <View style={tw`flex-row justify-between items-center py-4 border-t border-b border-gray-100 mb-6`}>
+          {/* Interaction Bar - SỬA LỖI TYM TẠI ĐÂY */}
+          <View
+            style={tw`mx-6 mb-8 bg-[#F8FAFC] rounded-[28px] p-4 flex-row justify-between items-center`}
+          >
             <View style={tw`flex-row items-center`}>
+              {/* Nút Thả tim (Tym) được sửa lỗi sang TouchableOpacity và gắn hàm toggleLike */}
               <TouchableOpacity
-                onPress={handleLike}
-                style={tw`flex-row items-center mr-6`}
+                onPress={() => toggleLike(currentPost.id)}
+                activeOpacity={0.7}
+                style={tw`flex-row items-center bg-white px-4 py-2 rounded-2xl shadow-sm mr-3`}
               >
                 <Heart
-                  size={20}
-                  color={post.isLiked ? '#EF4444' : '#9CA3AF'}
-                  fill={post.isLiked ? '#EF4444' : 'none'}
+                  size={22}
+                  // Cập nhật màu sắc dựa trên trạng thái isLiked
+                  color={currentPost.isLiked ? '#FF5252' : '#9CA3AF'}
+                  fill={currentPost.isLiked ? '#FF5252' : 'transparent'}
                 />
-                <Text style={tw`text-sm text-brandDark ml-2 font-semibold`}>
-                  {post.likes}
+                <Text style={tw`text-sm text-brandDark ml-2 font-black`}>
+                  {currentPost.heart}
                 </Text>
               </TouchableOpacity>
-              <View style={tw`flex-row items-center`}>
-                <MessageCircle size={20} color="#9CA3AF" />
-                <Text style={tw`text-sm text-textSub ml-2`}>{post.comments}</Text>
+
+              <View
+                style={tw`flex-row items-center bg-white px-4 py-2 rounded-2xl shadow-sm`}
+              >
+                <MessageCircle size={22} color="#7FB069" />
+                <Text style={tw`text-sm text-brandDark ml-2 font-black`}>
+                  {currentPost.activeComments}
+                </Text>
               </View>
             </View>
-            <TouchableOpacity>
-              <Share2 size={20} color="#9CA3AF" />
+            <TouchableOpacity style={tw`bg-white p-3 rounded-2xl shadow-sm`}>
+              <Share2 size={22} color="#1F2937" />
             </TouchableOpacity>
           </View>
 
-          {/* Comments Section */}
-          <Text style={tw`text-lg font-bold text-brandDark mb-4`}>
-            Bình luận ({comments.length})
-          </Text>
-          {comments.map((comment) => (
-            <View key={comment.id} style={tw`mb-4 pb-4 border-b border-gray-100`}>
-              <View style={tw`flex-row items-center mb-2`}>
-                <View style={tw`w-8 h-8 bg-gray-200 rounded-full mr-2`} />
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-sm font-semibold text-brandDark`}>
-                    {comment.author.name}
-                  </Text>
-                  <Text style={tw`text-xs text-textSub`}>
-                    {formatTimeAgo(comment.createdAt)}
-                  </Text>
-                </View>
-                <TouchableOpacity>
-                  <Heart
-                    size={16}
-                    color={comment.isLiked ? '#EF4444' : '#9CA3AF'}
-                    fill={comment.isLiked ? '#EF4444' : 'none'}
-                  />
-                </TouchableOpacity>
+          {/* Danh sách bình luận */}
+          <View style={tw`px-6 mb-10 pb-20`}>
+            <Text style={tw`text-xl font-black text-brandDark mb-6`}>
+              Thảo luận cộng đồng ({currentPost.activeComments})
+            </Text>
+            {Array.isArray(comments) && comments.length > 0 ? (
+              comments.map(comment => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  postId={postId}
+                  onReply={parent => {
+                    setEditingComment(null);
+                    setReplyTo(parent);
+                  }}
+                  onEdit={c => {
+                    setReplyTo(null);
+                    setEditingComment(c);
+                    setCommentText(c.content);
+                  }}
+                />
+              ))
+            ) : (
+              <View
+                style={tw`bg-gray-50 rounded-3xl p-8 items-center border border-dashed border-gray-200`}
+              >
+                {isCommentsLoading ? (
+                  <ActivityIndicator color="#7FB069" />
+                ) : (
+                  <>
+                    <MessageCircle size={40} color="#D1D5DB" />
+                    <Text style={tw`text-gray-400 mt-2 font-medium`}>
+                      Hãy là người đầu tiên chia sẻ cảm nghĩ!
+                    </Text>
+                  </>
+                )}
               </View>
-              <Text style={tw`text-sm text-brandDark leading-5`}>
-                {comment.content}
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Input Bar */}
+        <View style={tw`bg-white border-t border-gray-100 shadow-lg`}>
+          {selectedFiles.length > 0 && (
+            <ScrollView
+              horizontal
+              style={tw`flex-row px-4 py-3 bg-white border-b border-gray-50`}
+            >
+              {selectedFiles.map((file, idx) => (
+                <View key={idx} style={tw`relative mr-3`}>
+                  <Image
+                    source={{ uri: file.uri }}
+                    style={tw`w-16 h-16 rounded-xl bg-gray-100`}
+                  />
+                  <TouchableOpacity
+                    onPress={() =>
+                      setSelectedFiles(
+                        selectedFiles.filter((_, i) => i !== idx),
+                      )
+                    }
+                    style={tw`absolute -top-1.5 -right-1.5 bg-red-500 rounded-full p-1 border-2 border-white`}
+                  >
+                    <X size={10} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          {(replyTo || editingComment) && (
+            <View
+              style={tw`flex-row justify-between items-center bg-[#7FB069]/10 px-4 py-2`}
+            >
+              <Text style={tw`text-[11px] text-[#7FB069] font-black italic`}>
+                {editingComment
+                  ? 'ĐANG CHỈNH SỬA...'
+                  : `ĐANG TRẢ LỜI NGƯỜI DÙNG ${replyTo?.accountId}`}
               </Text>
+              <TouchableOpacity onPress={cancelAction}>
+                <X size={14} color="#7FB069" />
+              </TouchableOpacity>
             </View>
-          ))}
+          )}
 
-          {/* Bottom spacing */}
-          <View style={tw`h-6`} />
-        </View>
-      </ScrollView>
+          <View style={tw`flex-row items-center px-4 py-3 pb-8`}>
+            {!editingComment && (
+              <TouchableOpacity
+                onPress={handlePickImage}
+                style={tw`mr-3 bg-gray-50 p-2.5 rounded-full border border-gray-100`}
+              >
+                <Camera size={22} color="#7FB069" />
+              </TouchableOpacity>
+            )}
 
-      {/* Comment Input */}
-      <View style={tw`bg-white border-t border-gray-100 px-6 py-4 flex-row items-center`}>
-        <View style={tw`flex-1 bg-gray-50 rounded-2xl px-4 py-2 mr-3`}>
-          <TextInput
-            placeholder="Viết bình luận của bạn..."
-            placeholderTextColor="#9CA3AF"
-            style={tw`text-sm text-brandDark`}
-            value={commentText}
-            onChangeText={setCommentText}
-            multiline
-          />
+            <View
+              style={tw`flex-1 bg-gray-100 rounded-[22px] px-4 py-1.5 flex-row items-center`}
+            >
+              <TextInput
+                placeholder="Viết bình luận..."
+                placeholderTextColor="#9CA3AF"
+                style={tw`flex-1 min-h-[40px] text-brandDark max-h-32 py-2 font-medium`}
+                multiline
+                value={commentText}
+                onChangeText={setCommentText}
+              />
+              <TouchableOpacity
+                onPress={handleSendComment}
+                disabled={
+                  isActionLoading ||
+                  (!commentText.trim() && selectedFiles.length === 0)
+                }
+                style={tw`ml-2 p-2 bg-[#7FB069] rounded-full shadow-sm`}
+              >
+                {isActionLoading ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Send size={18} color="white" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-        <TouchableOpacity
-          onPress={handleComment}
-          disabled={!commentText.trim()}
-          style={tw`bg-primary p-3 rounded-full ${
-            !commentText.trim() ? 'opacity-50' : ''
-          }`}
-        >
-          <Send size={20} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

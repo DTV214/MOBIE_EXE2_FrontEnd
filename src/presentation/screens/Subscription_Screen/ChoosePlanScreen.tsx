@@ -41,10 +41,6 @@ const ChoosePlanScreen = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price);
-  };
-
   const handleContinue = () => {
     if (selectedPlanId) {
       navigation.navigate('PaymentMethod', { planId: selectedPlanId });

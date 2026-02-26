@@ -13,11 +13,23 @@ import {
   Moon,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-
+import { useAuthStore } from '../../viewmodels/useAuthStore'; // Import Store
+import { CommonActions } from '@react-navigation/native'; // Dùng để reset stack điều hướng
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const logout = useAuthStore(state => state.logout); // Lấy hàm logout từ store
+  const handleLogout = async () => {
+    await logout();
 
+    // Reset điều hướng để người dùng không thể nhấn "Back" quay lại app
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      }),
+    );
+  };
   return (
     <View style={tw`flex-1 bg-background`}>
       {/* Header */}
@@ -90,6 +102,7 @@ const SettingsScreen = () => {
 
         {/* Đăng xuất */}
         <TouchableOpacity
+          onPress={handleLogout} // Gắn sự kiện nhấn nút
           style={tw`flex-row items-center justify-center p-4 bg-red-50 rounded-2xl mb-10`}
         >
           <LogOut size={20} color="#EF4444" />

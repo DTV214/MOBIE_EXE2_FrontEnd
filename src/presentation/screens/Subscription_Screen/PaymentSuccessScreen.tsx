@@ -1,5 +1,5 @@
 // src/presentation/screens/Subscription_Screen/PaymentSuccessScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import LinearGradient from 'react-native-linear-gradient';
 const PaymentSuccessScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { subscriptionId, transactionId } = route.params || {};
+  const { transactionId } = route.params || {};
 
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
@@ -31,11 +31,7 @@ const PaymentSuccessScreen = () => {
   const [autoRenew, setAutoRenew] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       if (transactionId) {
         const transactionData = await getTransactionByIdUseCase.execute(transactionId);
@@ -57,11 +53,11 @@ const PaymentSuccessScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [transactionId]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN').format(price);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

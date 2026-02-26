@@ -1,5 +1,5 @@
 // src/presentation/screens/Subscription_Screen/PaymentMethodScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -28,11 +28,7 @@ const PaymentMethodScreen = () => {
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [planData, methodsData] = await Promise.all([
         getPlanByIdUseCase.execute(planId),
@@ -52,7 +48,11 @@ const PaymentMethodScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);

@@ -14,7 +14,6 @@ import {
   Search,
   MapPin,
   Star,
-  Filter,
   ChevronRight,
   MoreVertical,
   Navigation,
@@ -23,11 +22,11 @@ import {
   Dumbbell,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import {
-  searchFacilitiesUseCase,
-  suggestFacilitiesBySymptomsUseCase,
-} from '../../../di/Container';
-import { Facility, FacilityType } from '../../../domain/entities/Hospital';
+// import {
+//   getAllHospitalsUseCase,
+//   getHospitalsBySpecialtyUseCase,
+// } from '../../../di/Container';
+// import { Hospital, HospitalFilter } from '../../../domain/entities/HospitalNew';
 
 const HospitalSearchScreen = () => {
   const navigation = useNavigation<any>();
@@ -43,7 +42,7 @@ const HospitalSearchScreen = () => {
     } else {
       setFacilities([]);
     }
-  }, [searchQuery, selectedType]);
+  }, [searchQuery, selectedType, handleSearch]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -90,18 +89,18 @@ const HospitalSearchScreen = () => {
     }
   };
 
-  const getTypeIcon = (type: FacilityType) => {
-    switch (type) {
-      case 'clinic':
-        return Hospital;
-      case 'hospital':
-        return Building2;
-      case 'gym':
-        return Dumbbell;
-      default:
-        return Hospital;
-    }
-  };
+  // const getTypeIcon = (type: FacilityType) => {
+  //   switch (type) {
+  //     case 'clinic':
+  //       return Hospital;
+  //     case 'hospital':
+  //       return Building2;
+  //     case 'gym':
+  //       return Dumbbell;
+  //     default:
+  //       return Hospital;
+  //   };
+  // };
 
   return (
     <View style={tw`flex-1 bg-background`}>

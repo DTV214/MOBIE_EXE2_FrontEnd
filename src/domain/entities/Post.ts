@@ -1,58 +1,27 @@
 // src/domain/entities/Post.ts
-export interface UserProfile {
-  id: string;
-  name: string;
-  avatar?: string;
-  role?: 'expert' | 'doctor' | 'trainer' | 'user';
-  roleLabel?: string; // e.g., "Chuyên gia", "Bác sĩ", "PT"
-  specialty?: string; // e.g., "Tim mạch", "Dinh dưỡng"
-  isVerified?: boolean;
-}
-
-export interface PostMedia {
-  type: 'image' | 'video';
-  url: string;
-  thumbnail?: string;
-}
-
-export interface PostStats {
-  caloriesBurned?: number; // For workout posts
-  duration?: string; // e.g., "30 phút"
-  nutritionTip?: string; // For nutrition posts
-}
 
 export interface Post {
-  id: string;
-  author: UserProfile;
+  id: number;
   content: string;
-  media?: PostMedia[];
-  hashtags: string[];
-  stats?: PostStats;
-  likes: number;
-  comments: number;
-  shares: number;
+  heart: number; // Số lượng tương tác (tym)
+  isDeleted: boolean; // Trạng thái xóa
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'; // Trạng thái kiểm duyệt
+  rejectionReason: string | null; // Lý do bị từ chối (nếu có)
+  createdAt: string; // Định dạng ISO: 2026-02-06T...
+  authorId: number;
+  authorName: string;
+  authorEmail: string;
   isLiked: boolean;
-  isSaved: boolean;
-  createdAt: string; // ISO date string
-  updatedAt?: string;
+
+  // Các trường bổ sung từ API Detail
+  totalComments: number;
+  activeComments: number;
+  deletedComments: number;
+  mediaUrls: string[]; // Danh sách các URL ảnh/video
 }
 
-export interface Comment {
-  id: string;
-  postId: string;
-  author: UserProfile;
-  content: string;
-  likes: number;
-  isLiked: boolean;
-  createdAt: string;
-  replies?: Comment[];
-}
-
-export interface Topic {
-  id: string;
-  name: string;
-  hashtag: string; // e.g., "#DinhDưỡng"
-  description?: string;
-  postCount?: number;
-  isFollowing?: boolean;
+export interface PostPage {
+  content: Post[];
+  totalPages: number;
+  totalElements: number;
 }

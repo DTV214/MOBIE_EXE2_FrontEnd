@@ -1,6 +1,14 @@
+// src/domain/entities/User.ts
+
 export interface User {
-  id: string;
-  name: string;
+  id: number;
+  
   email: string;
-  bmi: number;
+  fullName: string; // Đổi từ 'fullname' của BE sang 'fullName' cho chuẩn JS/TS
+  role: string; // Ví dụ: "USER", "ADMIN"
+  status: string; // Ví dụ: "ACTIVE"
+  avatar?: string; // Có thể mở rộng sau này
+  bmi?: number | null; // Optional: Vì API Account hiện tại chưa trả về, ta để null\
+  // ✅ MỚI: Cờ kiểm tra đã có hồ sơ sức khỏe chưa
+  hasHealthProfile: boolean;
 }

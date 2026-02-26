@@ -1,5 +1,5 @@
 // src/presentation/screens/Dashboard_Screen/HeartRateDetailScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,31 @@ import { LineChart } from 'react-native-gifted-charts';
 import { getHeartRateTrendUseCase } from '../../../di/Container';
 import { HeartRateTrend } from '../../../domain/entities/HeartRateData';
 
+// PeriodButton component moved outside to avoid re-render
+interface PeriodButtonProps {
+  period: '7days' | '30days' | '3months';
+  label: string;
+  selectedPeriod: '7days' | '30days' | '3months';
+  onPress: (period: '7days' | '30days' | '3months') => void;
+}
+
+const PeriodButton = ({ period, label, selectedPeriod, onPress }: PeriodButtonProps) => (
+  <TouchableOpacity
+    onPress={() => onPress(period)}
+    style={tw`px-4 py-2 rounded-xl ${
+      selectedPeriod === period ? 'bg-primary' : 'bg-gray-100'
+    }`}
+  >
+    <Text
+      style={tw`font-semibold text-sm ${
+        selectedPeriod === period ? 'text-white' : 'text-textSub'
+      }`}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
 const HeartRateDetailScreen = () => {
   const navigation = useNavigation<any>();
   const [trend, setTrend] = useState<HeartRateTrend | null>(null);
@@ -28,9 +53,9 @@ const HeartRateDetailScreen = () => {
 
   useEffect(() => {
     loadData();
-  }, [selectedPeriod]);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getHeartRateTrendUseCase.execute(selectedPeriod);
       setTrend(data);
@@ -39,7 +64,7 @@ const HeartRateDetailScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
 
   if (loading || !trend) {
     return (
@@ -56,23 +81,6 @@ const HeartRateDetailScreen = () => {
       ? new Date(point.date).toLocaleDateString('vi-VN', { weekday: 'short' }).slice(0, 3)
       : '',
   }));
-
-  const PeriodButton = ({ period, label }: { period: '7days' | '30days' | '3months'; label: string }) => (
-    <TouchableOpacity
-      onPress={() => setSelectedPeriod(period)}
-      style={tw`px-4 py-2 rounded-xl ${
-        selectedPeriod === period ? 'bg-primary' : 'bg-gray-100'
-      }`}
-    >
-      <Text
-        style={tw`font-semibold text-sm ${
-          selectedPeriod === period ? 'text-white' : 'text-textSub'
-        }`}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={tw`flex-1 bg-background`}>
@@ -98,11 +106,11 @@ const HeartRateDetailScreen = () => {
         <View style={tw`px-6 pt-6`}>
           {/* Period Selection */}
           <View style={tw`flex-row justify-center mb-6`}>
-            <PeriodButton period="7days" label="7 Ngày" />
+            <PeriodButton period="7days" label="7 Ngày" selectedPeriod={selectedPeriod} onPress={setSelectedPeriod} />
             <View style={tw`w-2`} />
-            <PeriodButton period="30days" label="30 Ngày" />
+            <PeriodButton period="30days" label="30 Ngày" selectedPeriod={selectedPeriod} onPress={setSelectedPeriod} />
             <View style={tw`w-2`} />
-            <PeriodButton period="3months" label="3 Tháng" />
+            <PeriodButton period="3months" label="3 Tháng" selectedPeriod={selectedPeriod} onPress={setSelectedPeriod} />
           </View>
 
           {/* Chart Card */}
@@ -246,7 +254,7 @@ const HeartRateDetailScreen = () => {
 
           {/* Get AI Advice Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate('AI')}
+            onPress={() => navigation.navigate('AIChat')}
             activeOpacity={0.9}
             style={tw`mb-6`}
           >

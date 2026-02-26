@@ -1,5 +1,5 @@
 // src/presentation/screens/Subscription_Screen/ConfirmPaymentScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,11 +31,7 @@ const ConfirmPaymentScreen = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [planData, methodsData] = await Promise.all([
         getPlanByIdUseCase.execute(planId),
@@ -49,7 +45,11 @@ const ConfirmPaymentScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId, paymentMethodId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
