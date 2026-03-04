@@ -17,7 +17,7 @@ import { MockUserRepository } from '../data/repositories/MockUserRepository';
 import { StorageRepository } from '../data/repositories/StorageRepository';
 import { EnhancedHealthRepository } from '../data/repositories/EnhancedHealthRepository'; // ✅ Thay MockHealthRepository
 import { MockHospitalRepository } from '../data/repositories/MockHospitalRepository';
-import { MockSubscriptionRepository } from '../data/repositories/MockSubscriptionRepository';
+import { SubscriptionRepositoryImpl } from '../data/repositories/subscription/SubscriptionRepositoryImpl';
 
 // --- 2. DOMAIN LAYER (USE CASES) ---
 // Auth
@@ -72,11 +72,6 @@ import { SearchFacilities } from '../domain/usecases/SearchFacilities';
 import { SuggestFacilitiesBySymptoms } from '../domain/usecases/SuggestFacilitiesBySymptoms';
 import { GetFacilityById } from '../domain/usecases/GetFacilityById';
 import { GetAllHospitals } from '../domain/usecases/hospital/GetAllHospitals';
-import { GetAllPlans } from '../domain/usecases/GetAllPlans';
-import { GetPlanById } from '../domain/usecases/GetPlanById';
-import { GetPaymentMethods } from '../domain/usecases/GetPaymentMethods';
-import { ProcessPayment } from '../domain/usecases/ProcessPayment';
-import { GetTransactionById } from '../domain/usecases/GetTransactionById';
 import { CommentRepositoryImpl } from '../data/repositories/comment/CommentRepositoryImpl';
 import { GetCommentsByPostId } from '../domain/usecases/comment/GetCommentsByPostId';
 import { CreateComment } from '../domain/usecases/comment/CreateComment';
@@ -100,7 +95,7 @@ const healthRepository = new EnhancedHealthRepository(); // ✅ Sử dụng Enha
 const chatRepository = new AIChatRepositoryImpl(); // ✅ Real AI API
 const hospitalRepository = new MockHospitalRepository(); // Legacy hospital/facility features
 const realHospitalRepository = new HospitalRepositoryImpl(); // ✅ New Hospital API
-const subscriptionRepository = new MockSubscriptionRepository();
+const subscriptionRepository = new SubscriptionRepositoryImpl();
 
 // Comment Repository
 const commentRepository = new CommentRepositoryImpl();
@@ -193,16 +188,9 @@ export const suggestFacilitiesBySymptomsUseCase =
   new SuggestFacilitiesBySymptoms(hospitalRepository);
 export const getFacilityByIdUseCase = new GetFacilityById(hospitalRepository);
 
-// Subscription & Payment
-export const getAllPlansUseCase = new GetAllPlans(subscriptionRepository);
-export const getPlanByIdUseCase = new GetPlanById(subscriptionRepository);
-export const getPaymentMethodsUseCase = new GetPaymentMethods(
-  subscriptionRepository,
-);
-export const processPaymentUseCase = new ProcessPayment(subscriptionRepository);
-export const getTransactionByIdUseCase = new GetTransactionById(
-  subscriptionRepository,
-);
+// Subscription & Payment (Real API via SubscriptionRepositoryImpl)
+export { subscriptionRepository };
+
 
 export const getCommentsByPostIdUseCase = new GetCommentsByPostId(
   commentRepository,

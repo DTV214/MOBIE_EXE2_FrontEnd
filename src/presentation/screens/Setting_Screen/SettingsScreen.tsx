@@ -11,12 +11,13 @@ import {
   LogOut,
   ChevronRight,
   Moon,
+  Crown,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../viewmodels/useAuthStore'; // Import Store
 import { CommonActions } from '@react-navigation/native'; // Dùng để reset stack điều hướng
 const SettingsScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [isDarkMode, setIsDarkMode] = React.useState(false);
   const logout = useAuthStore(state => state.logout); // Lấy hàm logout từ store
   const handleLogout = async () => {
@@ -56,6 +57,11 @@ const SettingsScreen = () => {
           <SettingItem
             icon={<User size={20} color="#22C55E" />}
             title="Thông tin cá nhân"
+          />
+          <SettingItem
+            icon={<Crown size={20} color="#F59E0B" />}
+            title="Gói dịch vụ của tôi"
+            onPress={() => navigation.navigate('MySubscription')}
           />
           <SettingItem
             icon={<ShieldCheck size={20} color="#22C55E" />}
@@ -113,11 +119,11 @@ const SettingsScreen = () => {
   );
 };
 
-const SettingItem = ({ icon, title, border = true }: any) => (
+const SettingItem = ({ icon, title, border = true, onPress }: any) => (
   <TouchableOpacity
-    style={tw`flex-row justify-between items-center p-4 ${
-      border ? 'border-b border-gray-50' : ''
-    }`}
+    onPress={onPress}
+    style={tw`flex-row justify-between items-center p-4 ${border ? 'border-b border-gray-50' : ''
+      }`}
   >
     <View style={tw`flex-row items-center`}>
       <View style={tw`bg-primaryLight p-2 rounded-xl mr-3`}>{icon}</View>

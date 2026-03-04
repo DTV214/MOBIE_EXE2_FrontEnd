@@ -22,8 +22,11 @@ import ChoosePlanScreen from '../screens/Subscription_Screen/ChoosePlanScreen';
 import PaymentMethodScreen from '../screens/Subscription_Screen/PaymentMethodScreen';
 import ConfirmPaymentScreen from '../screens/Subscription_Screen/ConfirmPaymentScreen';
 import PaymentSuccessScreen from '../screens/Subscription_Screen/PaymentSuccessScreen';
+import HealthReportScreen from '../screens/Subscription_Screen/HealthReportScreen';
+import DashboardProScreen from '../screens/Subscription_Screen/DashboardProScreen';
 import AIChatScreen from '../screens/AI_Screen/AIChatScreen';
 import EditProfileScreen from '../screens/Profile_Screen/EditProfileScreen';
+import MySubscriptionScreen from '../screens/Subscription_Screen/MySubscriptionScreen';
 // ✅ MỚI: Import màn hình khảo sát
 import SurveyScreen from '../screens/Survey_Screen/SurveyScreen';
 import DailyLogScreen from '../screens/Tracking_Daily_Screen/DailyLogScreen';
@@ -64,6 +67,9 @@ const RootNavigator = ({ initialRouteName }: { initialRouteName: string }) => {
       <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
       <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
+      <Stack.Screen name="MySubscription" component={MySubscriptionScreen} />
+      <Stack.Screen name="HealthReport" component={HealthReportScreen} />
+      <Stack.Screen name="DashboardPro" component={DashboardProScreen} />
       <Stack.Screen name="DailyLog" component={DailyLogScreen} />
       <Stack.Screen name="MealTracking" component={MealTrackingScreen} />
       <Stack.Screen name="MyPosts" component={MyPostsScreen} />
