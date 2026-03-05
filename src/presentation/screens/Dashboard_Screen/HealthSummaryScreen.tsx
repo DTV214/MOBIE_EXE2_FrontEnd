@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
+import { scale, moderateScale, verticalScale, fs } from '../../../utils/responsive';
 import {
   ChevronLeft,
   Bell,
@@ -94,25 +95,25 @@ const HealthSummaryScreen = () => {
       {/* Header */}
       <LinearGradient
         colors={['#7FB069', '#6A9A5A']}
-        style={tw`pt-14 pb-4 px-6`}
+        style={[tw`px-6`, { paddingTop: verticalScale(48), paddingBottom: verticalScale(14) }]}
       >
         <View style={tw`flex-row items-center justify-between mb-2`}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={tw`p-2`}
           >
-            <ChevronLeft size={24} color="#FFFFFF" />
+            <ChevronLeft size={moderateScale(22, 0.3)} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={tw`flex-1 px-4`}>
-            <Text style={tw`text-white font-bold text-lg text-center`}>
+            <Text style={[tw`text-white font-bold text-center`, { fontSize: fs(17) }]}>
               Tóm tắt sức khỏe của bạn
             </Text>
-            <Text style={tw`text-white/80 text-xs text-center mt-1`}>
+            <Text style={[tw`text-white/80 text-center mt-1`, { fontSize: fs(11) }]}>
               Phân tích dành riêng cho hôm nay
             </Text>
           </View>
           <TouchableOpacity style={tw`p-2`}>
-            <Bell size={20} color="#FFFFFF" />
+            <Bell size={moderateScale(18, 0.3)} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -120,26 +121,26 @@ const HealthSummaryScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
         <View style={tw`px-6 pt-6`}>
           {/* Daily Progress Card */}
-          <View style={tw`bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100`}>
+          <View style={[tw`bg-white rounded-2xl mb-6 shadow-sm border border-gray-100`, { padding: scale(20) }]}>
             <View style={tw`flex-row items-center mb-4`}>
-              <View style={tw`w-14 h-14 bg-purple-100 rounded-xl items-center justify-center mr-4`}>
-                <Bot size={28} color="#8B5CF6" />
+              <View style={[tw`bg-purple-100 rounded-xl items-center justify-center`, { width: scale(50), height: scale(50), marginRight: scale(14) }]}>
+                <Bot size={moderateScale(26, 0.3)} color="#8B5CF6" />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={tw`text-brandDark font-bold text-lg`}>
+                <Text style={[tw`text-brandDark font-bold`, { fontSize: fs(17) }]}>
                   Tiến độ hàng ngày
                 </Text>
-                <Text style={tw`text-textSub text-sm`}>
+                <Text style={[tw`text-textSub`, { fontSize: fs(13) }]}>
                   {summary.overallMessage || 'Bạn đang rất tuyệt!'}
                 </Text>
               </View>
             </View>
 
             <View style={tw`items-center my-6`}>
-              <Text style={tw`text-5xl font-black text-primary mb-2`}>
+              <Text style={[tw`font-black text-primary mb-2`, { fontSize: fs(42) }]}>
                 {summary.dailyProgress.overallPercentage}%
               </Text>
-              <Text style={tw`text-textSub text-sm mb-4`}>Đã hoàn thành</Text>
+              <Text style={[tw`text-textSub mb-4`, { fontSize: fs(13) }]}>Đã hoàn thành</Text>
 
               {/* Progress Bar */}
               <View style={tw`w-full h-4 bg-gray-100 rounded-full overflow-hidden`}>
@@ -154,7 +155,7 @@ const HealthSummaryScreen = () => {
               </View>
             </View>
 
-            <Text style={tw`text-textSub text-sm text-center`}>
+            <Text style={[tw`text-textSub text-center`, { fontSize: fs(13) }]}>
               Bạn đã hoàn thành {summary.dailyProgress.overallPercentage}% mục tiêu sức khỏe
               hàng ngày của mình
             </Text>
@@ -162,42 +163,45 @@ const HealthSummaryScreen = () => {
 
           {/* Recommendations */}
           <View style={tw`mb-6`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
+            <Text style={[tw`text-brandDark font-bold mb-4`, { fontSize: fs(17) }]}>
               Lời khuyên hôm nay
             </Text>
             {summary.recommendations.map((rec) => (
               <TouchableOpacity
                 key={rec.id}
-                style={tw`bg-white rounded-2xl p-4 mb-3 flex-row items-center justify-between shadow-sm border border-gray-100`}
+                style={[tw`bg-white rounded-2xl mb-3 flex-row items-center justify-between shadow-sm border border-gray-100`, { padding: scale(14) }]}
                 activeOpacity={0.8}
               >
                 <View style={tw`flex-row items-center flex-1`}>
                   <View
-                    style={tw`w-12 h-12 rounded-xl items-center justify-center mr-4 ${
-                      rec.type === 'sleep'
-                        ? 'bg-purple-50'
-                        : rec.type === 'nutrition'
-                        ? 'bg-orange-50'
-                        : 'bg-green-50'
-                    }`}
+                    style={[
+                      tw`rounded-xl items-center justify-center ${
+                        rec.type === 'sleep'
+                          ? 'bg-purple-50'
+                          : rec.type === 'nutrition'
+                          ? 'bg-orange-50'
+                          : 'bg-green-50'
+                      }`,
+                      { width: scale(44), height: scale(44), marginRight: scale(14) },
+                    ]}
                   >
                     {rec.type === 'sleep' ? (
-                      <Moon size={24} color="#8B5CF6" />
+                      <Moon size={moderateScale(22, 0.3)} color="#8B5CF6" />
                     ) : rec.type === 'nutrition' ? (
-                      <Apple size={24} color="#F97316" />
+                      <Apple size={moderateScale(22, 0.3)} color="#F97316" />
                     ) : (
-                      <Activity size={24} color="#7FB069" />
+                      <Activity size={moderateScale(22, 0.3)} color="#7FB069" />
                     )}
                   </View>
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-brandDark font-semibold text-sm mb-1`}>
+                    <Text style={[tw`text-brandDark font-semibold mb-1`, { fontSize: fs(13) }]}>
                       {rec.title}
                     </Text>
-                    <Text style={tw`text-textSub text-xs`}>{rec.description}</Text>
+                    <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>{rec.description}</Text>
                   </View>
                 </View>
                 {rec.emoji && (
-                  <Text style={tw`text-2xl mr-2`}>{rec.emoji}</Text>
+                  <Text style={[tw`mr-2`, { fontSize: fs(22) }]}>{rec.emoji}</Text>
                 )}
               </TouchableOpacity>
             ))}
@@ -205,7 +209,7 @@ const HealthSummaryScreen = () => {
 
           {/* Today's Insights */}
           <View style={tw`mb-6`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
+            <Text style={[tw`text-brandDark font-bold mb-4`, { fontSize: fs(17) }]}>
               Những hiểu biết sâu sắc ngày nay
             </Text>
             {summary.insights.map((insight) => {
@@ -213,20 +217,23 @@ const HealthSummaryScreen = () => {
               return (
                 <View
                   key={insight.category}
-                  style={tw`bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100`}
+                  style={[tw`bg-white rounded-2xl mb-4 shadow-sm border border-gray-100`, { padding: scale(18) }]}
                 >
                   <View style={tw`flex-row items-start mb-4`}>
                     <View
-                      style={tw`w-12 h-12 rounded-xl items-center justify-center mr-4 ${
-                        insight.category === 'nutrition'
-                          ? 'bg-orange-50'
-                          : insight.category === 'activity'
-                          ? 'bg-blue-50'
-                          : 'bg-purple-50'
-                      }`}
+                      style={[
+                        tw`rounded-xl items-center justify-center ${
+                          insight.category === 'nutrition'
+                            ? 'bg-orange-50'
+                            : insight.category === 'activity'
+                            ? 'bg-blue-50'
+                            : 'bg-purple-50'
+                        }`,
+                        { width: scale(44), height: scale(44), marginRight: scale(14) },
+                      ]}
                     >
                       <IconComponent
-                        size={24}
+                        size={moderateScale(22, 0.3)}
                         color={
                           insight.category === 'nutrition'
                             ? '#F97316'
@@ -237,10 +244,10 @@ const HealthSummaryScreen = () => {
                       />
                     </View>
                     <View style={tw`flex-1`}>
-                      <Text style={tw`text-brandDark font-bold text-base mb-1`}>
+                      <Text style={[tw`text-brandDark font-bold mb-1`, { fontSize: fs(15) }]}>
                         {insight.title}
                       </Text>
-                      <Text style={tw`text-textSub text-xs`}>{insight.subtitle}</Text>
+                      <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>{insight.subtitle}</Text>
                     </View>
                     <View
                       style={[
@@ -262,19 +269,19 @@ const HealthSummaryScreen = () => {
                   </View>
 
                   {insight.emoji && (
-                    <Text style={tw`text-xl mb-3`}>{insight.emoji}</Text>
+                    <Text style={{ fontSize: fs(19), marginBottom: verticalScale(10) }}>{insight.emoji}</Text>
                   )}
 
                   <View style={tw`flex-row flex-wrap`}>
                     {insight.metrics.map((metric, index) => (
                       <View
                         key={index}
-                        style={tw`bg-gray-50 rounded-xl px-3 py-2 mr-2 mb-2`}
+                        style={[tw`bg-gray-50 rounded-xl mr-2 mb-2`, { paddingHorizontal: scale(10), paddingVertical: scale(7) }]}
                       >
-                        <Text style={tw`text-brandDark font-semibold text-sm`}>
+                        <Text style={[tw`text-brandDark font-semibold`, { fontSize: fs(13) }]}>
                           {metric.value}
                         </Text>
-                        <Text style={tw`text-textSub text-xs`}>{metric.label}</Text>
+                        <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>{metric.label}</Text>
                       </View>
                     ))}
                   </View>
@@ -293,16 +300,16 @@ const HealthSummaryScreen = () => {
               colors={['#3B82F6', '#8B5CF6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={tw`h-16 rounded-2xl flex-row items-center justify-center shadow-lg px-6`}
+              style={[tw`rounded-2xl flex-row items-center justify-center shadow-lg px-6`, { height: verticalScale(56) }]}
             >
-              <MessageCircle size={24} color="#FFFFFF" />
-              <Text style={tw`text-white font-bold text-lg ml-3`}>
+              <MessageCircle size={moderateScale(22, 0.3)} color="#FFFFFF" />
+              <Text style={[tw`text-white font-bold ml-3`, { fontSize: fs(16) }]}>
                 Trò chuyện với AI Coach
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
-          <Text style={tw`text-textSub text-xs text-center mb-6`}>
+          <Text style={[tw`text-textSub text-center mb-6`, { fontSize: fs(11) }]}>
             Nhận lời khuyên và câu trả lời cá nhân cho các câu hỏi về sức khỏe của bạn
           </Text>
 

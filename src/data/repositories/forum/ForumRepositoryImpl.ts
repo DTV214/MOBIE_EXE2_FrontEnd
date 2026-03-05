@@ -58,6 +58,7 @@ export class ForumRepositoryImpl implements IForumRepository {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      transformRequest: (data: any) => data, // Prevent axios from serializing FormData
     });
 
     // Backend trả về chuỗi URL secure_url trực tiếp

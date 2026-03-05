@@ -83,7 +83,11 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
+        // Tối ưu cho nhiều kiến trúc CPU
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
     signingConfigs {
         debug {
@@ -92,17 +96,30 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (project.hasProperty('MYAPP_RELEASE_STORE_FILE')) {
+                storeFile file(MYAPP_RELEASE_STORE_FILE)
+                storePassword MYAPP_RELEASE_STORE_PASSWORD
+                keyAlias MYAPP_RELEASE_KEY_ALIAS
+                keyPassword MYAPP_RELEASE_KEY_PASSWORD
+            } else {
+                storeFile file('healthapp-release-key.keystore')
+                storePassword '123456'
+                keyAlias 'healthapp'
+                keyPassword '123456'
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            // Băng zén để tối ưu APK size
+            shrinkResources enableProguardInReleaseBuilds
         }
     }
 }
@@ -114,7 +131,7 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation("androidx.credentials:credentials:1.6.0-rc01")
     implementation("androidx.credentials:credentials-play-services-auth:1.6.0-rc01")
-    implementation("com.google.android.libraries.identity.googleid:googleid:<latest version>")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
 
     if (hermesEnabled.toBoolean()) {

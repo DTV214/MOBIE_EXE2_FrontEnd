@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -21,8 +21,6 @@ import {
   Footprints,
 
   ChevronRight,
-  TrendingUp,
-  Info,
   Utensils,
   X,
   Clock,
@@ -64,6 +62,8 @@ const DailyLogScreen = () => {
   const [editingMealId, setEditingMealId] = useState<number | null>(null);
   const [selectedExercise, setSelectedExercise] = useState<any>(null);
   const [editDuration, setEditDuration] = useState('');
+  const [isSavingMeal, setIsSavingMeal] = useState(false);
+  const [isSavingExercise, setIsSavingExercise] = useState(false);
 
   // --- Custom Time Picker State ---
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
@@ -85,10 +85,6 @@ const DailyLogScreen = () => {
       fetchExerciseLogs(currentLog.id);
     }
   }, [currentLog?.id, fetchExerciseLogs]);
-
-  const totalMealCalories = useMemo(() => {
-    return mealLogs.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0);
-  }, [mealLogs]);
 
   const pad = (n: string | number) => n.toString().padStart(2, '0');
 
@@ -117,6 +113,7 @@ const DailyLogScreen = () => {
 
   const handleSubmitMeal = async () => {
     try {
+      setIsSavingMeal(true);
       const finalTime = `${pad(tempHour)}:${pad(tempMinute)}:00`;
       const params = {
         mealType: formMealType,
@@ -132,6 +129,8 @@ const DailyLogScreen = () => {
       setMealModalVisible(false);
     } catch (error: any) {
       Alert.alert('Lỗi', error.response?.data?.message || error.message);
+    } finally {
+      setIsSavingMeal(false);
     }
   };
 
@@ -145,6 +144,7 @@ const DailyLogScreen = () => {
   const handleUpdateExercise = async () => {
     if (selectedExercise && currentLog?.id) {
       try {
+        setIsSavingExercise(true);
         await updateExercise(selectedExercise.id, {
           duration: parseInt(editDuration, 10),
           exerciseTypeId: selectedExercise.exerciseId,
@@ -154,6 +154,8 @@ const DailyLogScreen = () => {
         Alert.alert('Thành công', 'Đã cập nhật thời gian tập luyện.');
       } catch  {
         Alert.alert('Lỗi', 'Không thể cập nhật bài tập.');
+      } finally {
+        setIsSavingExercise(false);
       }
     }
   };
@@ -239,16 +241,7 @@ const DailyLogScreen = () => {
       <ScrollView style={tw`flex-1 mt-6`} showsVerticalScrollIndicator={false}>
         {renderHorizontalCalendar()}
 
-        {/* Debug Log Info Area */}
-        <View
-          style={tw`mx-6 mb-4 p-2 bg-blue-50 rounded-lg border border-blue-100 flex-row items-center`}
-        >
-          <Info size={14} color="#1D4ED8" />
-          <Text style={tw`ml-2 text-[10px] text-blue-700 font-bold`}>
-            LOG ID: {currentLog?.id || 'N/A'} | CALO NẠP: {totalMealCalories}{' '}
-            kcal
-          </Text>
-        </View>
+
 
         {!currentLog ? (
           <View style={tw`px-6 py-10 items-center`}>
@@ -275,10 +268,10 @@ const DailyLogScreen = () => {
               <View style={tw`flex-row justify-between items-center mb-6`}>
                 <View>
                   <Text style={tw`text-gray-400 text-xs font-bold uppercase`}>
-                    Calo Còn Lại
+                    Calo Nạp
                   </Text>
                   <Text style={tw`text-white text-3xl font-black`}>
-                    {(currentLog.remainingCalories || 0).toLocaleString()}
+                    {(currentLog.totalCaloriesIn || 0).toLocaleString()}
                   </Text>
                 </View>
                 <View style={tw`bg-primary/20 p-3 rounded-2xl`}>
@@ -322,35 +315,7 @@ const DailyLogScreen = () => {
               />
             </View>
 
-            {/* Macronutrients Analysis */}
-            <View style={tw`bg-gray-50 p-5 rounded-[24px] mb-6`}>
-              <View style={tw`flex-row items-center mb-4`}>
-                <TrendingUp size={18} color="#7FB069" />
-                <Text style={tw`ml-2 font-bold text-brandDark`}>
-                  Dinh dưỡng hôm nay
-                </Text>
-              </View>
-              <View style={tw`flex-row justify-between`}>
-                <NutrientMiniProgress
-                  label="Protein"
-                  value={currentLog.totalProtein || 0}
-                  target={150}
-                  color="#7FB069"
-                />
-                <NutrientMiniProgress
-                  label="Carbs"
-                  value={currentLog.totalCarbs || 0}
-                  target={200}
-                  color="#3B82F6"
-                />
-                <NutrientMiniProgress
-                  label="Fat"
-                  value={currentLog.totalFat || 0}
-                  target={60}
-                  color="#F97316"
-                />
-              </View>
-            </View>
+
 
             {/* --- MEAL DETAILS SECTION --- */}
             <View style={tw`flex-row justify-between items-center mb-4`}>
@@ -528,14 +493,19 @@ const DailyLogScreen = () => {
               <TouchableOpacity
                 onPress={handleUpdateExercise}
                 style={tw`flex-1`}
+                disabled={isSavingExercise}
               >
                 <LinearGradient
                   colors={['#3B82F6', '#2563EB']}
-                  style={tw`py-4 rounded-2xl shadow-lg`}
+                  style={tw`py-4 rounded-2xl shadow-lg ${isSavingExercise ? 'opacity-60' : ''}`}
                 >
-                  <Text style={tw`text-white font-bold text-center`}>
-                    Lưu thay đổi
-                  </Text>
+                  {isSavingExercise ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={tw`text-white font-bold text-center`}>
+                      Lưu thay đổi
+                    </Text>
+                  )}
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -653,14 +623,18 @@ const DailyLogScreen = () => {
                 allowFontScaling={false}
               />
             </View>
-            <TouchableOpacity onPress={handleSubmitMeal}>
+            <TouchableOpacity onPress={handleSubmitMeal} disabled={isSavingMeal}>
               <LinearGradient
                 colors={['#7FB069', '#6A9A5A']}
-                style={tw`py-4 rounded-2xl items-center shadow-lg`}
+                style={tw`py-4 rounded-2xl items-center shadow-lg ${isSavingMeal ? 'opacity-60' : ''}`}
               >
-                <Text style={tw`text-white font-bold text-lg`}>
-                  {isEditMode ? 'Lưu thay đổi' : 'Khởi tạo ngay'}
-                </Text>
+                {isSavingMeal ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={tw`text-white font-bold text-lg`}>
+                    {isEditMode ? 'Lưu thay đổi' : 'Khởi tạo ngay'}
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -689,30 +663,6 @@ const StatCard = ({ icon, label, value, unit, color }: any) => (
         {unit}
       </Text>
     </View>
-  </View>
-);
-
-const NutrientMiniProgress = ({ label, value, target, color }: any) => (
-  <View style={tw`w-[30%]`}>
-    <Text
-      style={tw`text-[10px] text-gray-400 font-bold mb-1 uppercase text-center`}
-    >
-      {label}
-    </Text>
-    <View style={tw`h-1 bg-gray-200 rounded-full overflow-hidden`}>
-      <View
-        style={[
-          tw`h-full rounded-full`,
-          {
-            backgroundColor: color,
-            width: `${Math.min((value / (target || 1)) * 100, 100)}%`,
-          },
-        ]}
-      />
-    </View>
-    <Text style={tw`text-center text-xs font-bold mt-1 text-brandDark`}>
-      {value || 0}g
-    </Text>
   </View>
 );
 
