@@ -27,6 +27,7 @@ import {
 
 // 1. Import Store User để lấy thông tin
 import { useUserStore } from '../../viewmodels/useUserStore';
+import { useStepStore } from '../../viewmodels/useStepStore';
 
 // Helper function: Dynamic greeting dựa trên thời gian
 const getDynamicGreeting = () => {
@@ -79,6 +80,7 @@ const DashboardScreen = () => {
 
   // 2. Lấy user và health profile từ Store
   const { user, healthProfile, fetchUserProfile } = useUserStore();
+  const { todaySteps, isInitialized, initializeStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // State xử lý refresh
@@ -89,7 +91,12 @@ const DashboardScreen = () => {
     if (!user) {
       fetchUserProfile();
     }
-  }, [user, fetchUserProfile]);
+
+    // Initialize step tracking
+    if (!isInitialized) {
+      initializeStepTracking();
+    }
+  }, [user, fetchUserProfile, isInitialized, initializeStepTracking]);
 
   // Hàm load dữ liệu dashboard
   const loadData = async () => {
@@ -108,7 +115,9 @@ const DashboardScreen = () => {
     setRefreshing(true);
     fetchUserProfile(); // Cập nhật lại thông tin user
     loadData(); // Cập nhật lại chỉ số sức khỏe
-  }, [fetchUserProfile]);
+    fetchTodaySteps(); // Cập nhật lại số bước chân
+    syncWithBackend(); // Sync với backend
+  }, [fetchUserProfile, fetchTodaySteps, syncWithBackend]);
 
   if (loading) {
     return (
@@ -211,7 +220,7 @@ const DashboardScreen = () => {
               <QuickAccessCard
                 icon={Footprints}
                 title="Bước chân"
-                subtitle="Theo dõi số bước hàng ngày"
+                subtitle={`${todaySteps.toLocaleString()} bước hôm nay`}
                 color="#3B82F6"
                 onPress={() => navigation.navigate('HealthSummary')}
               />
