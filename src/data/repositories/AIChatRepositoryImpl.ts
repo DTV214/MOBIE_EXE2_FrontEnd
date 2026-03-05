@@ -23,7 +23,7 @@ export class AIChatRepositoryImpl implements IChatRepository {
         hasToken: !!authData?.accessToken,
         tokenPreview: authData?.accessToken?.substring(0, 20) + '...' || 'No token'
       });
-      
+
       if (!authData?.accessToken) {
         console.error('❌ No access token found - user needs to login');
         throw new Error('Vui lòng đăng nhập để sử dụng AI chat');
@@ -42,7 +42,7 @@ export class AIChatRepositoryImpl implements IChatRepository {
       console.log('🤖 Sending AI request to /api/public/ai/prompt:', { message: message.trim(), isSpeech });
 
       // Call AI API
-      const response = await aiApiClient.post<{message: string, audioBase64?: string}>(
+      const response = await aiApiClient.post<{ message: string, audioBase64?: string }>(
         '/api/public/ai/prompt',
         request
       );
@@ -64,8 +64,8 @@ export class AIChatRepositoryImpl implements IChatRepository {
         await this.saveCurrentSession();
       }
 
-      console.log('✅ AI response received:', { 
-        hasMessage: !!aiMessage.content, 
+      console.log('✅ AI response received:', {
+        hasMessage: !!aiMessage.content,
         contentLength: aiMessage.content.length,
         hasAudio: aiMessage.hasAudio,
         audioSize: aiMessage.audioBase64?.length || 0
@@ -75,7 +75,7 @@ export class AIChatRepositoryImpl implements IChatRepository {
 
     } catch (error: any) {
       console.error('❌ AI API Error:', error);
-      
+
       if (error.response) {
         console.error('❌ Server Response:', {
           status: error.response.status,
@@ -83,17 +83,21 @@ export class AIChatRepositoryImpl implements IChatRepository {
           data: error.response.data,
           url: error.config?.url
         });
-        
+
         if (error.response.status === 401) {
           throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
         } else if (error.response.status === 403) {
-          throw new Error('Không có quyền truy cập AI chat. Vui lòng đăng nhập lại hoặc liên hệ quản trị viên.');
+          const serverMsg = error.response.data?.message || '';
+          if (serverMsg.toLowerCase().includes('quota') || serverMsg.toLowerCase().includes('limit') || serverMsg.toLowerCase().includes('hết lượt')) {
+            throw new Error('QUOTA_EXCEEDED::Bạn đã hết lượt chat AI hôm nay. Nâng cấp gói để có thêm lượt chat nhé! 🚀');
+          }
+          throw new Error('QUOTA_EXCEEDED::Bạn chưa có quyền sử dụng tính năng này. Hãy nâng cấp gói để trải nghiệm AI Chat! 🚀');
         } else if (error.response.status === 500) {
           throw new Error('Server gặp lỗi nội bộ. API endpoint có thể không đúng hoặc server chưa sẵn sàng.');
         } else if (error.response.status === 404) {
           throw new Error('API endpoint không tồn tại. Vui lòng kiểm tra cấu hình.');
         }
-        
+
         throw new Error(`Lỗi server (${error.response.status}): ${error.response.data?.message || error.response.statusText}`);
       } else if (error.request) {
         console.error('❌ Network Error:', error.request);
@@ -136,7 +140,7 @@ export class AIChatRepositoryImpl implements IChatRepository {
 
     this.currentSession = session;
     await this.saveCurrentSession();
-    
+
     console.log('🆕 Created new AI session:', session.id);
     return session;
   }
@@ -201,7 +205,7 @@ export class AIChatRepositoryImpl implements IChatRepository {
         category: 'nutrition',
       },
       {
-        id: '2', 
+        id: '2',
         text: 'Làm thế nào để cải thiện giấc ngủ?',
         category: 'health',
       },
