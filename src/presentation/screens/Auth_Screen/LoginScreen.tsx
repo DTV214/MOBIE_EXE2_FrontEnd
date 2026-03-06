@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
-import { scale, moderateScale, verticalScale, fs, wp, hp } from '../../../utils/responsive';
+import { scale, moderateScale, verticalScale, fs } from '../../../utils/responsive';
 import { Leaf, Shield, Heart, Zap } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
