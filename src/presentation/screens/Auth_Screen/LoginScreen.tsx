@@ -8,6 +8,7 @@ import {
   StatusBar,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import { scale, moderateScale, verticalScale, fs } from '../../../utils/responsive';
@@ -27,6 +28,7 @@ const LoginScreen = () => {
   const {
     loginWithGoogle,
     loading: authLoading,
+    error: authError,
   } = useAuthStore();
   const { fetchUserProfile } = useUserStore();
 
@@ -62,6 +64,12 @@ const LoginScreen = () => {
           console.log('--- [NAVIGATION] Redirecting to Survey Screen ---');
           navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
         }
+      } else {
+        const errorMsg = useAuthStore.getState().error;
+        Alert.alert(
+          'Đăng nhập thất bại',
+          errorMsg || 'Không thể đăng nhập. Vui lòng thử lại.',
+        );
       }
     } catch (error) {
       console.error('--- [SCREEN LEVEL ERROR] ---', error);
@@ -71,110 +79,110 @@ const LoginScreen = () => {
   return (
     <View style={tw`flex-1 bg-white`}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
+
       {/* Background Gradient */}
       <LinearGradient
         colors={['#E8F5E3', '#FFFFFF', '#FFFFFF']}
         style={tw`flex-1`}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={tw`flex-grow`}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-        {/* Header Section */}
-        <View style={[tw`px-8`, { paddingTop: verticalScale(60), paddingBottom: verticalScale(24) }]}>
-          {/* Logo */}
-          <View style={tw`items-center mb-8`}>
-            <View
-              style={[
-                tw`bg-primary rounded-full items-center justify-center mb-6 shadow-lg`,
-                { width: scale(88), height: scale(88) },
-              ]}
-            >
-              <Leaf size={moderateScale(44, 0.3)} color="#FFFFFF" />
+          {/* Header Section */}
+          <View style={[tw`px-8`, { paddingTop: verticalScale(60), paddingBottom: verticalScale(24) }]}>
+            {/* Logo */}
+            <View style={tw`items-center mb-8`}>
+              <View
+                style={[
+                  tw`bg-primary rounded-full items-center justify-center mb-6 shadow-lg`,
+                  { width: scale(88), height: scale(88) },
+                ]}
+              >
+                <Leaf size={moderateScale(44, 0.3)} color="#FFFFFF" />
+              </View>
+              <Text style={[tw`text-primary font-black mb-2`, { fontSize: fs(28) }]}>
+                Lành Care
+              </Text>
+              <Text style={[tw`text-textSub text-center`, { fontSize: fs(14), lineHeight: fs(20) }]}>
+                Ứng dụng theo dõi sức khỏe toàn diện
+              </Text>
             </View>
-            <Text style={[tw`text-primary font-black mb-2`, { fontSize: fs(28) }]}>
-              Lành Care
-            </Text>
-            <Text style={[tw`text-textSub text-center`, { fontSize: fs(14), lineHeight: fs(20) }]}>
-              Ứng dụng theo dõi sức khỏe toàn diện
-            </Text>
+
+            {/* Welcome Message */}
+            <View style={tw`mb-8`}>
+              <Text style={[tw`font-black text-brandDark mb-3 text-center`, { fontSize: fs(26) }]}>
+                Chào mừng trở lại!
+              </Text>
+              <Text style={[tw`text-textSub text-center`, { fontSize: fs(15), lineHeight: fs(22) }]}>
+                Tiếp tục hành trình chăm sóc sức khỏe{'\n'}cùng chúng tôi
+              </Text>
+            </View>
+
+            {/* Features */}
+            <View style={tw`mb-10`}>
+              <FeatureItem
+                icon={Heart}
+                title="Theo dõi sức khỏe"
+                subtitle="Ghi nhận chỉ số cơ thể hàng ngày"
+              />
+              <FeatureItem
+                icon={Zap}
+                title="AI hỗ trợ"
+                subtitle="Nhận lời khuyên sức khỏe thông minh"
+              />
+              <FeatureItem
+                icon={Shield}
+                title="Bảo mật tuyệt đối"
+                subtitle="Thông tin cá nhân luôn được bảo vệ"
+              />
+            </View>
           </View>
 
-          {/* Welcome Message */}
-          <View style={tw`mb-8`}>
-            <Text style={[tw`font-black text-brandDark mb-3 text-center`, { fontSize: fs(26) }]}>
-              Chào mừng trở lại!
-            </Text>
-            <Text style={[tw`text-textSub text-center`, { fontSize: fs(15), lineHeight: fs(22) }]}>
-              Tiếp tục hành trình chăm sóc sức khỏe{'\n'}cùng chúng tôi
-            </Text>
-          </View>
-
-          {/* Features */}
-          <View style={tw`mb-10`}>
-            <FeatureItem 
-              icon={Heart}
-              title="Theo dõi sức khỏe"
-              subtitle="Ghi nhận chỉ số cơ thể hàng ngày"
-            />
-            <FeatureItem 
-              icon={Zap}
-              title="AI hỗ trợ"
-              subtitle="Nhận lời khuyên sức khỏe thông minh"
-            />
-            <FeatureItem 
-              icon={Shield}
-              title="Bảo mật tuyệt đối"
-              subtitle="Thông tin cá nhân luôn được bảo vệ"
-            />
-          </View>
-        </View>
-
-        {/* Bottom Section */}
-        <View style={[tw`flex-1 justify-end px-8`, { paddingBottom: verticalScale(36) }]}>
-          {/* Google Login Button */}
-          <TouchableOpacity
-            onPress={handleGoogleLogin}
-            disabled={authLoading}
-            activeOpacity={0.9}
-            style={tw`mb-6 ${authLoading ? 'opacity-50' : ''}`}
-          >
-            <LinearGradient
-              colors={['#7FB069', '#6A9A5A']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[tw`rounded-2xl flex-row items-center justify-center shadow-lg`, { height: verticalScale(56) }]}
+          {/* Bottom Section */}
+          <View style={[tw`flex-1 justify-end px-8`, { paddingBottom: verticalScale(36) }]}>
+            {/* Google Login Button */}
+            <TouchableOpacity
+              onPress={handleGoogleLogin}
+              disabled={authLoading}
+              activeOpacity={0.9}
+              style={tw`mb-6 ${authLoading ? 'opacity-50' : ''}`}
             >
-              {authLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <View
-                    style={[
-                      tw`bg-white rounded-full items-center justify-center mr-4`,
-                      { width: scale(36), height: scale(36) },
-                    ]}
-                  >
-                    <Text style={[tw`font-bold text-red-500`, { fontSize: fs(20) }]}>G</Text>
-                  </View>
-                  <Text style={[tw`text-white font-bold`, { fontSize: fs(16) }]}>
-                    Đăng nhập với Google
-                  </Text>
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+              <LinearGradient
+                colors={['#7FB069', '#6A9A5A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[tw`rounded-2xl flex-row items-center justify-center shadow-lg`, { height: verticalScale(56) }]}
+              >
+                {authLoading ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <>
+                    <View
+                      style={[
+                        tw`bg-white rounded-full items-center justify-center mr-4`,
+                        { width: scale(36), height: scale(36) },
+                      ]}
+                    >
+                      <Text style={[tw`font-bold text-red-500`, { fontSize: fs(20) }]}>G</Text>
+                    </View>
+                    <Text style={[tw`text-white font-bold`, { fontSize: fs(16) }]}>
+                      Đăng nhập với Google
+                    </Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
 
-          {/* Footer */}
-          <Text style={[tw`text-textSub text-center`, { fontSize: fs(13), lineHeight: fs(20) }]}>
-            Bằng cách đăng nhập, bạn đồng ý với{'\n'}
-            <Text style={tw`text-primary font-semibold`}>Điều khoản sử dụng</Text>
-            {' và '}
-            <Text style={tw`text-primary font-semibold`}>Chính sách bảo mật</Text>
-          </Text>
-        </View>
+            {/* Footer */}
+            <Text style={[tw`text-textSub text-center`, { fontSize: fs(13), lineHeight: fs(20) }]}>
+              Bằng cách đăng nhập, bạn đồng ý với{'\n'}
+              <Text style={tw`text-primary font-semibold`}>Điều khoản sử dụng</Text>
+              {' và '}
+              <Text style={tw`text-primary font-semibold`}>Chính sách bảo mật</Text>
+            </Text>
+          </View>
         </ScrollView>
       </LinearGradient>
     </View>
