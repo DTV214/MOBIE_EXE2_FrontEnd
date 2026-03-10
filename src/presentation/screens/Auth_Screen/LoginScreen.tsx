@@ -49,17 +49,34 @@ const LoginScreen = () => {
 
       if (success) {
         console.log('--- [FLOW] Auth Success. Now fetching User Profile ---');
-        await fetchUserProfile();
+        
+        try {
+          await fetchUserProfile();
 
-        const currentUser = useUserStore.getState().user;
-        console.log('--- [STEP 8] Determining Redirection Logic ---');
-        console.log('User Health Profile Status:', currentUser?.hasHealthProfile);
+          const currentUser = useUserStore.getState().user;
+          console.log('--- [STEP 8] Determining Redirection Logic ---');
+          console.log('Current User:', JSON.stringify(currentUser));
+          console.log('User Health Profile Status:', currentUser?.hasHealthProfile);
 
-        if (currentUser?.hasHealthProfile) {
-          console.log('--- [NAVIGATION] Redirecting to Dashboard (Main) ---');
-          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-        } else {
-          console.log('--- [NAVIGATION] Redirecting to Survey Screen ---');
+          // ✅ CRITICAL: Check if user profile fetch was successful
+          if (!currentUser) {
+            console.error('❌ User profile is null after fetch - backend may have returned 404/401');
+            console.log('--- [NAVIGATION] Forcing redirect to Survey (new user flow) ---');
+            navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
+            return;
+          }
+
+          if (currentUser.hasHealthProfile) {
+            console.log('--- [NAVIGATION] Redirecting to Dashboard (Main) ---');
+            navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+          } else {
+            console.log('--- [NAVIGATION] Redirecting to Survey Screen ---');
+            navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
+          }
+        } catch (profileError: any) {
+          console.error('❌ Error fetching user profile:', profileError);
+          // Even if profile fetch fails, still navigate (user is authenticated)
+          console.log('--- [NAVIGATION] Profile fetch failed, redirecting to Survey ---');
           navigation.reset({ index: 0, routes: [{ name: 'Survey' }] });
         }
       }

@@ -35,40 +35,52 @@ export const useUserStore = create<UserState>((set, get) => ({
   fetchUserProfile: async () => {
     set({ loading: true, error: null });
     try {
+      console.log('🔍 [useUserStore] Fetching user profile from backend...');
+      
       // 1. Lấy thông tin tài khoản (Account)
       const user = await getAccountProfileUseCase.execute();
+      
+      console.log('✅ [useUserStore] User profile fetched successfully:', JSON.stringify(user));
       set({ user });
 
       // 2. Nếu User đã có hồ sơ sức khỏe -> Gọi luôn hàm lấy Health Profile
       if (user.hasHealthProfile) {
+        console.log('🏥 [useUserStore] User has health profile, fetching health data...');
         await get().fetchHealthData();
       } else {
+        console.log('⚠️ [useUserStore] User does not have health profile yet');
         set({ loading: false }); // Nếu không có thì dừng loading
       }
     } catch (error: any) {
-      console.error('Error fetching profile:', error);
+      console.error('❌ [useUserStore] Error fetching profile:', error);
+      console.error('❌ [useUserStore] Error response:', error?.response);
+      console.error('❌ [useUserStore] Error status:', error?.response?.status);
+      console.error('❌ [useUserStore] Error data:', error?.response?.data);
       
       // Enhanced error handling
       const status = error?.response?.status;
       const isAuthError = status === 401 || status === 403;
       const isUserNotFound = status === 404 && error?.response?.data?.message?.includes('Account not found');
       
-      if (isAuthError || isUserNotFound) {
-        // Clear user data and stored tokens for auth errors or deleted accounts
-        console.log(isUserNotFound ? 'User account deleted or not found - clearing stored data' : 'Authentication failed - user needs to login');
-        
+      if (isAuthError) {
+        console.log('🔐 [useUserStore] Authentication error - clearing stored data');
         // Clear stored token
         try {
           const AsyncStorage = await import('@react-native-async-storage/async-storage');
           await AsyncStorage.default.removeItem('accessToken');
-          console.log('Cleared stored access token');
+          console.log('✅ [useUserStore] Cleared stored access token');
         } catch (clearError) {
-          console.error('Failed to clear stored token:', clearError);
+          console.error('❌ [useUserStore] Failed to clear stored token:', clearError);
         }
         
         set({ user: null, healthProfile: null, loading: false, error: null });
-        // Don't set error message to avoid UI disruption on login flow
+      } else if (isUserNotFound) {
+        console.log('👤 [useUserStore] User account not found (404) - this is normal for first-time login');
+        console.log('ℹ️ [useUserStore] User should be redirected to Survey to create profile');
+        // DON'T clear token for 404 - user is authenticated but profile doesn't exist yet
+        set({ user: null, healthProfile: null, loading: false, error: null });
       } else {
+        console.error('⚠️ [useUserStore] Other error occurred:', error.message);
         set({
           loading: false,
           error: error.message || 'Không thể tải thông tin cá nhân',

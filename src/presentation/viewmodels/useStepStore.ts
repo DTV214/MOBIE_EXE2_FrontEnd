@@ -37,13 +37,27 @@ export const useStepStore = create<StepState>((set, get) => ({
       // Check if Google Fit is available
       const isAvailable = await googleFitService.isAvailable();
       if (!isAvailable) {
-        throw new Error('Google Fit không khả dụng trên thiết bị này');
+        console.warn('⚠️ Health tracking not available on this device');
+        set({ 
+          isLoading: false, 
+          isInitialized: false,
+          error: 'Thiết bị không hỗ trợ theo dõi bước chân',
+          todaySteps: 0 
+        });
+        return;
       }
 
       // Initialize Google Fit
       const success = await googleFitService.initialize();
       if (!success) {
-        throw new Error('Không thể khởi tạo Google Fit. Vui lòng kiểm tra quyền truy cập');
+        console.warn('⚠️ Health tracking permission denied');
+        set({ 
+          isLoading: false, 
+          isInitialized: false,
+          error: 'Cần cấp quyền để theo dõi bước chân',
+          todaySteps: 0
+        });
+        return;
       }
 
       // Get initial step count

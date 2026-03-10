@@ -80,7 +80,7 @@ const DashboardScreen = () => {
 
   // 2. Lấy user và health profile từ Store
   const { user, healthProfile, fetchUserProfile } = useUserStore();
-  const { todaySteps, isInitialized, initializeStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
+  const { todaySteps, isInitialized, error: stepError, initializeStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // State xử lý refresh
@@ -220,8 +220,12 @@ const DashboardScreen = () => {
               <QuickAccessCard
                 icon={Footprints}
                 title="Bước chân"
-                subtitle={`${todaySteps.toLocaleString()} bước hôm nay`}
-                color="#3B82F6"
+                subtitle={
+                  stepError 
+                    ? stepError  // Hiển thị error message user-friendly
+                    : `${todaySteps.toLocaleString()} bước hôm nay`
+                }
+                color={stepError ? "#9CA3AF" : "#3B82F6"}  // Gray nếu có lỗi
                 onPress={() => navigation.navigate('HealthSummary')}
               />
               <QuickAccessCard

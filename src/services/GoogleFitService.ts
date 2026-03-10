@@ -23,6 +23,12 @@ class GoogleFitService {
 
       console.log('🔧 Initializing Health Connect...');
 
+      // ⚠️ CRITICAL: Check if module exists before calling
+      if (!HealthConnect || typeof HealthConnect.initialize !== 'function') {
+        console.error('❌ Health Connect module not available on this device (emulator or old Android version)');
+        return false;
+      }
+
       // Initialize Health Connect
       const initResult = await HealthConnect.initialize();
       
@@ -62,6 +68,12 @@ class GoogleFitService {
    */
   async getTodaySteps(): Promise<number> {
     try {
+      // ⚠️ CRITICAL: Check module availability first
+      if (!HealthConnect || typeof HealthConnect.readRecords !== 'function') {
+        console.warn('⚠️ Health Connect not available, returning 0 steps');
+        return 0;
+      }
+
       if (!this.isInitialized) {
         console.log('⚠️ Health Connect not initialized, attempting to initialize...');
         const initialized = await this.initialize();
@@ -101,6 +113,12 @@ class GoogleFitService {
    */
   async getStepsForDate(date: string): Promise<StepData> {
     try {
+      // ⚠️ CRITICAL: Check module availability
+      if (!HealthConnect || typeof HealthConnect.readRecords !== 'function') {
+        console.warn('⚠️ Health Connect not available, returning 0 steps');
+        return { date, steps: 0, calories: 0 };
+      }
+
       const targetDate = new Date(date);
       const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
       const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
@@ -229,6 +247,12 @@ class GoogleFitService {
    */
   async isAvailable(): Promise<boolean> {
     try {
+      // ⚠️ CRITICAL: Check if module exists (emulator/old devices don't have Health Connect)
+      if (!HealthConnect || typeof HealthConnect.initialize !== 'function') {
+        console.warn('⚠️ Health Connect module not available on this device');
+        return false;
+      }
+      
       const available = await HealthConnect.initialize();
       console.log(`🔍 Health Connect available: ${available}`);
       return available;
