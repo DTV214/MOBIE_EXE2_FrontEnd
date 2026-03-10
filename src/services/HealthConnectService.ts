@@ -1,4 +1,4 @@
-// src/services/GoogleFitService.ts
+// src/services/HealthConnectService.ts
 import HealthConnect from 'react-native-health-connect';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axiosInstance from '../data/apis/axiosInstance';
@@ -9,7 +9,7 @@ interface StepData {
   calories: number;
 }
 
-class GoogleFitService {
+class HealthConnectService {
   private isInitialized = false;
 
   /**
@@ -277,5 +277,5 @@ class GoogleFitService {
 }
 
 // Export singleton instance
-export const googleFitService = new GoogleFitService();
-export default GoogleFitService;
+export const healthConnectService = new HealthConnectService();
+export default HealthConnectService;

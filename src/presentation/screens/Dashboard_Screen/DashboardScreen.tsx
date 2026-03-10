@@ -45,7 +45,9 @@ interface QuickAccessCardProps {
   title: string;
   subtitle: string;
   color: string;
-  onPress: () => void;
+  onPress?: () => void;       // ← Optional
+  onLongPress?: () => void;   // ← NEW: Long press
+  disabled?: boolean;         // ← NEW: Disabled state
 }
 
 const QuickAccessCard = ({
@@ -54,12 +56,17 @@ const QuickAccessCard = ({
   subtitle,
   color,
   onPress,
+  onLongPress,
+  disabled = false,
 }: QuickAccessCardProps) => (
   <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.8}
+    onPress={disabled ? undefined : onPress}
+    onLongPress={disabled ? undefined : onLongPress}
+    activeOpacity={disabled ? 1 : 0.8}
     style={[
-      tw`bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 mx-1`,
+      tw`bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 mx-1 ${
+        disabled ? 'opacity-60' : ''
+      }`,
       { padding: scale(14) },
     ]}
   >
@@ -80,7 +87,7 @@ const DashboardScreen = () => {
 
   // 2. Lấy user và health profile từ Store
   const { user, healthProfile, fetchUserProfile } = useUserStore();
-  const { todaySteps, isInitialized, error: stepError, initializeStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
+  const { todaySteps, isInitialized, isEnabled, isAvailable, isLoading: stepLoading, error: stepError, checkAvailability, enableStepTracking, disableStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // State xử lý refresh
@@ -92,11 +99,9 @@ const DashboardScreen = () => {
       fetchUserProfile();
     }
 
-    // Initialize step tracking
-    if (!isInitialized) {
-      initializeStepTracking();
-    }
-  }, [user, fetchUserProfile, isInitialized, initializeStepTracking]);
+    // Check Health Connect availability (không auto enable)
+    checkAvailability();
+  }, [user, fetchUserProfile, checkAvailability]);
 
   // Hàm load dữ liệu dashboard
   const loadData = async () => {
@@ -108,6 +113,47 @@ const DashboardScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  // Hàm xử lý kích hoạt step tracking
+  const handleEnableStepTracking = () => {
+    Alert.alert(
+      'Kích hoạt theo dõi bước chân',
+      'Bạn có muốn kích hoạt chức năng theo dõi bước chân hàng ngày không?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Kích hoạt',
+          onPress: async () => {
+            await enableStepTracking();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  // Hàm xử lý tắt step tracking  
+  const handleDisableStepTracking = () => {
+    Alert.alert(
+      'Tắt theo dõi bước chân',
+      'Bạn có chắc chắn muốn tắt chức năng này không?',
+      [
+        {
+          text: 'Hủy', 
+          style: 'cancel',
+        },
+        {
+          text: 'Tắt',
+          style: 'destructive',
+          onPress: () => disableStepTracking(),
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   // Hàm xử lý khi kéo xuống để refresh
@@ -221,12 +267,31 @@ const DashboardScreen = () => {
                 icon={Footprints}
                 title="Bước chân"
                 subtitle={
-                  stepError 
-                    ? stepError  // Hiển thị error message user-friendly
+                  !isAvailable 
+                    ? "Thiết bị không hỗ trợ"
+                    : !isEnabled
+                    ? "Chạm để kích hoạt"  
+                    : stepError 
+                    ? stepError  
+                    : stepLoading
+                    ? "Đang tải..."
                     : `${todaySteps.toLocaleString()} bước hôm nay`
                 }
-                color={stepError ? "#9CA3AF" : "#3B82F6"}  // Gray nếu có lỗi
-                onPress={() => navigation.navigate('HealthSummary')}
+                color={
+                  !isAvailable || stepError ? "#9CA3AF"     // Gray cho error/not available
+                    : !isEnabled ? "#F97316"                // Orange cho chưa kích hoạt  
+                    : stepLoading ? "#6B7280"               // Gray cho loading
+                    : "#3B82F6"                             // Blue cho normal
+                }  
+                onPress={
+                  !isAvailable ? undefined
+                    : !isEnabled ? handleEnableStepTracking
+                    : () => navigation.navigate('HealthSummary')
+                }
+                onLongPress={
+                  isEnabled ? handleDisableStepTracking : undefined
+                }
+                disabled={!isAvailable}
               />
               <QuickAccessCard
                 icon={Zap}

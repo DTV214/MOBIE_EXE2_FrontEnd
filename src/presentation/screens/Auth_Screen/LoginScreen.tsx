@@ -28,7 +28,6 @@ const LoginScreen = () => {
   const {
     loginWithGoogle,
     loading: authLoading,
-    error: authError,
   } = useAuthStore();
   const { fetchUserProfile } = useUserStore();
 
@@ -120,7 +119,7 @@ const LoginScreen = () => {
                 <Leaf size={moderateScale(44, 0.3)} color="#FFFFFF" />
               </View>
               <Text style={[tw`text-primary font-black mb-2`, { fontSize: fs(28) }]}>
-                Lành Care
+                LanhCare
               </Text>
               <Text style={[tw`text-textSub text-center`, { fontSize: fs(14), lineHeight: fs(20) }]}>
                 Ứng dụng theo dõi sức khỏe toàn diện

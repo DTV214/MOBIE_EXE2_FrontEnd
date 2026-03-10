@@ -75,6 +75,14 @@
           }
         },
         {
+          "client_id": "572891748659-v1kdo2odk6u6h2dd8juffjoqrk2rb1jh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lanhcare",
+            "certificate_hash": "42e6df030f929ebb0029135726a2f2484d8099e1"
+          }
+        },
+        {
           "client_id": "572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com",
           "client_type": 3
         }
