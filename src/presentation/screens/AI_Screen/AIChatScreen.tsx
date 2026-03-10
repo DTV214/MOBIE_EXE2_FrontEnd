@@ -31,8 +31,10 @@ import { useNavigation } from '@react-navigation/native';
 // Import the repository directly for AI features
 import { AIChatRepositoryImpl } from '../../../data/repositories/AIChatRepositoryImpl';
 import { AIChatMessage } from '../../../domain/entities/AIChat';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const AIChatScreen = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
 
   // Initialize AI repository
@@ -205,28 +207,32 @@ const AIChatScreen = () => {
         >
           {/* AI Avatar */}
           {!isUser && (
-            <View style={tw`w-8 h-8 bg-primary rounded-full items-center justify-center mr-2 mb-1`}>
+            <View style={[tw`w-8 h-8 rounded-full items-center justify-center mr-2 mb-1`, { backgroundColor: colors.primary }]}>
               <Bot size={16} color="#FFFFFF" />
             </View>
           )}
 
           {/* Message Bubble */}
           <View
-            style={tw`px-4 py-3 rounded-2xl ${isUser
-                ? 'bg-primary rounded-tr-none'
-                : 'bg-primaryLight rounded-tl-none'
-              }`}
+            style={[
+              tw`px-4 py-3 rounded-2xl`,
+              isUser
+                ? [tw`rounded-tr-none`, { backgroundColor: colors.primary }]
+                : [tw`rounded-tl-none`, { backgroundColor: colors.surface }]
+            ]}
           >
             <Text
-              style={tw`text-sm leading-5 ${isUser ? 'text-white' : 'text-brandDark'
-                }`}
+              style={[
+                tw`text-sm leading-5`,
+                { color: isUser ? colors.primaryText : colors.text }
+              ]}
             >
               {item.content}
             </Text>
 
             {/* Audio Controls for AI messages with audio */}
             {!isUser && item.hasAudio && item.audioBase64 && (
-              <View style={tw`flex-row items-center mt-2 pt-2 border-t border-gray-200`}>
+              <View style={[tw`flex-row items-center mt-2 pt-2 border-t`, { borderTopColor: colors.border }]}>
                 <TouchableOpacity
                   style={tw`flex-row items-center px-2 py-1 rounded-lg ${isPlayingThis ? 'bg-red-100' : 'bg-green-100'
                     }`}
@@ -250,8 +256,10 @@ const AIChatScreen = () => {
             )}
 
             <Text
-              style={tw`text-[10px] mt-1 ${isUser ? 'text-white/70' : 'text-textSub'
-                }`}
+              style={[
+                tw`text-[10px] mt-1`,
+                { color: isUser ? `${colors.primaryText}70` : colors.textSecondary }
+              ]}
             >
               {formatTime(item.timestamp)}
             </Text>
@@ -263,8 +271,8 @@ const AIChatScreen = () => {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 bg-background items-center justify-center`}>
-        <ActivityIndicator size="large" color="#7FB069" />
+      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -272,13 +280,13 @@ const AIChatScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={tw`flex-1 bg-background`}
+      style={[tw`flex-1`, { backgroundColor: colors.background }]}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.statusBarBackground} />
 
       {/* Header */}
-      <View style={tw`bg-primary pt-14 pb-4 px-6`}>
+      <View style={[tw`pt-14 pb-4 px-6`, { backgroundColor: colors.primary }]}>
         <View style={tw`flex-row items-center justify-between`}>
           <View style={tw`flex-row items-center flex-1`}>
             <TouchableOpacity
@@ -287,8 +295,8 @@ const AIChatScreen = () => {
             >
               <ChevronLeft size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <View style={tw`w-10 h-10 bg-white rounded-full items-center justify-center mr-3`}>
-              <Bot size={20} color="#7FB069" />
+            <View style={[tw`w-10 h-10 rounded-full items-center justify-center mr-3`, { backgroundColor: colors.surface }]}>
+              <Bot size={20} color={colors.primary} />
             </View>
             <View style={tw`flex-1`}>
               <Text style={tw`text-white font-bold text-base`}>
@@ -322,14 +330,14 @@ const AIChatScreen = () => {
           isTyping ? (
             <View style={tw`mb-4 items-start`}>
               <View style={tw`flex-row items-center`}>
-                <View style={tw`w-8 h-8 bg-primary rounded-full items-center justify-center mr-2`}>
+                <View style={[tw`w-8 h-8 rounded-full items-center justify-center mr-2`, { backgroundColor: colors.primary }]}>
                   <Bot size={16} color="#FFFFFF" />
                 </View>
-                <View style={tw`bg-primaryLight px-4 py-3 rounded-2xl rounded-tl-none`}>
+                <View style={[tw`px-4 py-3 rounded-2xl rounded-tl-none`, { backgroundColor: colors.surface }]}>
                   <View style={tw`flex-row`}>
-                    <View style={tw`w-2 h-2 bg-primary rounded-full mr-1`} />
-                    <View style={tw`w-2 h-2 bg-primary rounded-full mr-1`} />
-                    <View style={tw`w-2 h-2 bg-primary rounded-full`} />
+                    <View style={[tw`w-2 h-2 rounded-full mr-1`, { backgroundColor: colors.primary }]} />
+                    <View style={[tw`w-2 h-2 rounded-full mr-1`, { backgroundColor: colors.primary }]} />
+                    <View style={[tw`w-2 h-2 rounded-full`, { backgroundColor: colors.primary }]} />
                   </View>
                 </View>
               </View>
@@ -340,7 +348,7 @@ const AIChatScreen = () => {
 
       {/* Upgrade Prompt */}
       {showUpgradePrompt && (
-        <View style={tw`bg-amber-50 border-t border-amber-200 px-6 py-4`}>
+        <View style={[tw`border-t px-6 py-4`, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <View style={tw`flex-row items-center mb-2`}>
             <Crown size={20} color="#F59E0B" />
             <Text style={tw`text-amber-800 font-bold text-sm ml-2 flex-1`}>
@@ -365,10 +373,10 @@ const AIChatScreen = () => {
       )}
 
       {/* Input Bar */}
-      <View style={tw`bg-white border-t border-gray-100 px-6 py-4`}>
+      <View style={[tw`border-t px-6 py-4`, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         {/* Speech Mode Toggle */}
         <View style={tw`flex-row items-center justify-between mb-3`}>
-          <Text style={tw`text-textSub text-sm`}>Chế độ thoại</Text>
+          <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>Chế độ thoại</Text>
           <TouchableOpacity
             onPress={toggleSpeechMode}
             style={tw`flex-row items-center px-3 py-1 rounded-full ${isSpeechMode ? 'bg-green-100' : 'bg-gray-100'
@@ -383,15 +391,15 @@ const AIChatScreen = () => {
         </View>
 
         <View style={tw`flex-row items-center`}>
-          <View style={tw`flex-1 bg-gray-50 rounded-2xl px-4 py-3 mr-3 flex-row items-center`}>
+          <View style={[tw`flex-1 rounded-2xl px-4 py-3 mr-3 flex-row items-center`, { backgroundColor: colors.background }]}>
             <TextInput
               placeholder={
                 isSpeechMode
                   ? "Gửi tin nhắn và nhận phản hồi bằng giọng nói..."
                   : "Hỏi Lành AI bất cứ điều gì về sức khỏe..."
               }
-              placeholderTextColor="#9CA3AF"
-              style={tw`flex-1 text-brandDark text-sm`}
+              placeholderTextColor={colors.textSecondary}
+              style={[tw`flex-1 text-sm`, { color: colors.text }]}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -406,8 +414,11 @@ const AIChatScreen = () => {
           <TouchableOpacity
             onPress={handleSendMessage}
             disabled={!inputText.trim() || isTyping}
-            style={tw`w-12 h-12 bg-primary rounded-full items-center justify-center ${!inputText.trim() || isTyping ? 'opacity-50' : ''
-              }`}
+            style={[
+              tw`w-12 h-12 rounded-full items-center justify-center`,
+              { backgroundColor: colors.primary },
+              (!inputText.trim() || isTyping) && tw`opacity-50`
+            ]}
           >
             <Send size={20} color="#FFFFFF" />
           </TouchableOpacity>

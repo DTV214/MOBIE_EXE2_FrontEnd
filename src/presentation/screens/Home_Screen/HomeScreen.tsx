@@ -5,8 +5,10 @@ import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useUserStore } from '../../viewmodels/useUserStore'; // Kết nối Store
 import tw from '../../../utils/tailwind';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const HomeScreen = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   // Lấy user và hàm fetch từ Store
   const { user, fetchUserProfile, loading } = useUserStore();
@@ -19,24 +21,24 @@ const HomeScreen = () => {
   }, [user, fetchUserProfile]);
 
   return (
-    <View style={tw`flex-1 justify-center items-center bg-white p-5`}>
+    <View style={[tw`flex-1 justify-center items-center p-5`, { backgroundColor: colors.background }]}>
       {loading ? (
-        <ActivityIndicator size="large" color="#7FB069" />
+        <ActivityIndicator size="large" color={colors.primary} />
       ) : (
         <>
-          <Text style={tw`text-3xl font-bold text-green-600 mb-4 text-center`}>
+          <Text style={[tw`text-3xl font-bold mb-4 text-center`, { color: colors.primary }]}>
             {/* Hiển thị tên thật thay vì Sarah */}
             Xin chào {user?.fullName || 'Bạn'} 👋
           </Text>
-          <Text style={tw`text-gray-500 mb-8 text-center`}>
+          <Text style={[tw`mb-8 text-center`, { color: colors.textSecondary }]}>
             Chào mừng bạn quay trở lại với HealthApp!
           </Text>
 
           <TouchableOpacity
-            style={tw`bg-[#7FB069] px-8 py-4 rounded-full shadow-md`}
+            style={[tw`px-8 py-4 rounded-full shadow-md`, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('Main')}
           >
-            <Text style={tw`text-white font-bold text-lg`}>Vào Dashboard</Text>
+            <Text style={[tw`font-bold text-lg`, { color: '#ffffff' }]}>Vào Dashboard</Text>
           </TouchableOpacity>
         </>
       )}

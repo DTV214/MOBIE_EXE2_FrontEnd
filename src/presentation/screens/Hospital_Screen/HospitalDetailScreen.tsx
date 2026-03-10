@@ -1,5 +1,5 @@
 // src/presentation/screens/Hospital_Screen/HospitalDetailScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,36 +19,16 @@ import {
   MoreVertical,
 } from 'lucide-react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getHospitalByIdUseCase } from '../../../di/Container';
 import { Hospital } from '../../../domain/entities/HospitalNew';
+import { useTheme } from '../../../contexts/ThemeContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 const HospitalDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { hospital: routeHospital } = route.params || {};
-
-  const [hospital, setHospital] = useState<Hospital | null>(routeHospital || null);
-  const [loading, setLoading] = useState(!routeHospital);
-
-  useEffect(() => {
-    if (!routeHospital && routeHospital?.id) {
-      loadHospital();
-    }
-  }, [routeHospital?.id]);
-
-  const loadHospital = async () => {
-    try {
-      if (routeHospital?.id) {
-        const data = await getHospitalByIdUseCase.execute(routeHospital.id);
-        setHospital(data);
-      }
-    } catch (error) {
-      console.error('Error loading hospital:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { isDarkMode, colors } = useTheme();
+  const [hospital] = useState<Hospital | null>(routeHospital || null);
 
   const handleCall = () => {
     if (hospital?.phone) {
@@ -71,10 +51,10 @@ const HospitalDetailScreen = () => {
     return HospitalIcon; // All are hospitals now
   };
 
-  if (loading || !hospital) {
+  if (!hospital) {
     return (
-      <View style={tw`flex-1 bg-background items-center justify-center`}>
-        <Text style={tw`text-textSub`}>Đang tải...</Text>
+      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}>
+        <Text style={[tw`text-base`, { color: colors.textSecondary }]}>Không tìm thấy thông tin bệnh viện.</Text>
       </View>
     );
   }
@@ -82,54 +62,66 @@ const HospitalDetailScreen = () => {
   const IconComponent = getTypeIcon();
 
   return (
-    <View style={tw`flex-1 bg-background`}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.statusBarStyle}
+        backgroundColor={isDarkMode ? colors.background : '#000000'}
+      />
 
       {/* Banner Image */}
-      <View style={tw`relative h-64 bg-gray-200`}>
+      <View style={[tw`relative h-64`, { backgroundColor: colors.surface }]}>
         <View style={tw`flex-1 items-center justify-center`}>
-          <IconComponent size={80} color="#7FB069" opacity={0.3} />
+          <IconComponent size={80} color={colors.primary} opacity={0.3} />
         </View>
 
         {/* Header */}
         <View style={tw`absolute top-0 left-0 right-0 pt-14 pb-4 px-6 flex-row items-center justify-between`}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={tw`bg-white/90 p-2 rounded-xl`}
+            style={[
+              tw`p-2 rounded-xl`,
+              { backgroundColor: isDarkMode ? `${colors.surface}E6` : '#ffffff90' }
+            ]}
           >
-            <ChevronLeft size={24} color="#1F2937" />
+            <ChevronLeft size={24} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={tw`bg-white/90 p-2 rounded-xl`}>
-            <MoreVertical size={20} color="#1F2937" />
+          <TouchableOpacity style={[
+            tw`p-2 rounded-xl`,
+            { backgroundColor: isDarkMode ? `${colors.surface}E6` : '#ffffff90' }
+          ]}>
+            <MoreVertical size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={tw`flex-1 -mt-8 bg-white rounded-t-[40px] px-6 pt-8`}
+        style={[
+          tw`flex-1 -mt-8 rounded-t-[40px] px-6 pt-8`,
+          { backgroundColor: colors.surface }
+        ]}
       >
         {/* Name and Rating */}
         <View style={tw`flex-row justify-between items-start mb-4`}>
           <View style={tw`flex-1 mr-4`}>
-            <Text style={tw`text-2xl font-bold text-brandDark mb-2`}>
+            <Text style={[tw`text-2xl font-bold mb-2`, { color: colors.text }]}>
               {hospital.name}
             </Text>
             <View style={tw`flex-row items-center`}>
-              <MapPin size={14} color="#7FB069" />
-              <Text style={tw`text-textSub text-sm ml-1 flex-1`} numberOfLines={2}>
+              <MapPin size={14} color={colors.primary} />
+              <Text style={[tw`text-sm ml-1 flex-1`, { color: colors.textSecondary }]} numberOfLines={2}>
                 {hospital.address}
               </Text>
             </View>
           </View>
-          <View style={tw`bg-green-50 p-3 rounded-2xl items-center`}>
+          <View style={[tw`p-3 rounded-2xl items-center`, { backgroundColor: `${colors.primary}20` }]}>
             <View style={tw`flex-row items-center`}>
-              <HospitalIcon size={16} color="#10B981" />
-              <Text style={tw`text-green-700 font-bold text-xs mt-1 ml-1`}>
+              <HospitalIcon size={16} color={colors.primary} />
+              <Text style={[tw`font-bold text-xs mt-1 ml-1`, { color: colors.primary }]}>
                 {hospital.specialtyCount}
               </Text>
             </View>
-            <Text style={tw`text-green-600 text-[10px] mt-0.5`}>
+            <Text style={[tw`text-[10px] mt-0.5`, { color: colors.primary }]}>
               chuyên khoa
             </Text>
           </View>
@@ -155,10 +147,10 @@ const HospitalDetailScreen = () => {
 
         {/* Description */}
         <View style={tw`mb-6`}>
-          <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+          <Text style={[tw`font-bold text-lg mb-3`, { color: colors.text }]}>
             Thông tin bệnh viện
           </Text>
-          <Text style={tw`text-textSub leading-6`}>
+          <Text style={[tw`leading-6`, { color: colors.textSecondary }]}>
             Bệnh viện {hospital.name} là một cơ sở y tế chất lượng cao với {hospital.specialtyCount} chuyên khoa khác nhau.
           </Text>
         </View>
@@ -166,16 +158,22 @@ const HospitalDetailScreen = () => {
         {/* Specialties List */}
         {hospital.specialties && hospital.specialties.length > 0 && (
           <View style={tw`mb-6`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+            <Text style={[tw`font-bold text-lg mb-3`, { color: colors.text }]}>
               Chuyên khoa
             </Text>
             <View style={tw`flex-row flex-wrap`}>
               {hospital.specialties.map(spec => (
                 <View
                   key={spec.id}
-                  style={tw`bg-green-50 px-3 py-2 rounded-xl mr-2 mb-2 border border-green-100`}
+                  style={[
+                    tw`px-3 py-2 rounded-xl mr-2 mb-2 border`,
+                    {
+                      backgroundColor: `${colors.primary}20`,
+                      borderColor: `${colors.primary}40`
+                    }
+                  ]}
                 >
-                  <Text style={tw`text-green-700 font-semibold text-xs`}>
+                  <Text style={[tw`font-semibold text-xs`, { color: colors.primary }]}>
                     {spec.nameVn}
                   </Text>
                 </View>
@@ -189,13 +187,22 @@ const HospitalDetailScreen = () => {
       </ScrollView>
 
       {/* Footer Action Buttons */}
-      <View style={tw`bg-white border-t border-gray-100 px-6 py-4 flex-row`}>
+      <View style={[
+        tw`border-t px-6 py-4 flex-row`,
+        {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border
+        }
+      ]}>
         {hospital.phone && (
           <TouchableOpacity
             onPress={handleCall}
-            style={tw`bg-gray-100 p-4 rounded-2xl mr-3`}
+            style={[
+              tw`p-4 rounded-2xl mr-3`,
+              { backgroundColor: colors.background }
+            ]}
           >
-            <Phone size={24} color="#7FB069" />
+            <Phone size={24} color={colors.primary} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -204,7 +211,7 @@ const HospitalDetailScreen = () => {
           style={tw`flex-1`}
         >
           <LinearGradient
-            colors={['#7FB069', '#6A9A5A']}
+            colors={[colors.primary, `${colors.primary}CC`]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={tw`p-4 rounded-2xl flex-row items-center justify-center`}

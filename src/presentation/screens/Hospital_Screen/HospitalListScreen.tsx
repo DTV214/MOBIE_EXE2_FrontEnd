@@ -25,8 +25,10 @@ import {
   getAllHospitalsUseCase
 } from '../../../di/Container';
 import { Hospital, HospitalFilter } from '../../../domain/entities/HospitalNew';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const HospitalListScreen = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const [searchQuery, setSearchQuery] = useState('');
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -113,17 +115,20 @@ const HospitalListScreen = () => {
   const renderHospitalCard = (hospital: Hospital) => (
     <TouchableOpacity
       key={hospital.id}
-      style={tw`bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100`}
+      style={[tw`rounded-xl p-4 mb-3 shadow-sm border`, {
+        backgroundColor: colors.surface,
+        borderColor: colors.border
+      }]}
       onPress={() => navigateToDetail(hospital)}
     >
       <View style={tw`flex-row justify-between items-start mb-2`}>
         <View style={tw`flex-1`}>
-          <Text style={tw`text-lg font-bold text-gray-900 mb-1`}>
+          <Text style={[tw`text-lg font-bold mb-1`, { color: colors.text }]}>
             {hospital.name}
           </Text>
           <View style={tw`flex-row items-center mb-2`}>
-            <MapPin size={16} color="#6B7280" />
-            <Text style={tw`text-gray-600 ml-1 flex-1`} numberOfLines={2}>
+            <MapPin size={16} color={colors.textSecondary} />
+            <Text style={[tw`ml-1 flex-1`, { color: colors.textSecondary }]} numberOfLines={2}>
               {hospital.address}
             </Text>
           </View>
@@ -154,29 +159,29 @@ const HospitalListScreen = () => {
           <TouchableOpacity style={tw`p-2 mr-2`}>
             <Navigation size={16} color="#3B82F6" />
           </TouchableOpacity>
-          <ChevronRight size={16} color="#9CA3AF" />
+          <ChevronRight size={16} color={colors.textSecondary} />
         </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.statusBarBackground} />
       
       {/* Header */}
-      <View style={tw`bg-white px-4 py-3 border-b border-gray-200`}>
-        <Text style={tw`text-xl font-bold text-gray-900 mb-3`}>
+      <View style={[tw`px-4 py-3 border-b`, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <Text style={[tw`text-xl font-bold mb-3`, { color: colors.text }]}>
           Danh sách bệnh viện
         </Text>
         
         {/* Search Bar */}
-        <View style={tw`flex-row items-center bg-gray-100 rounded-xl px-4 py-3`}>
-          <Search size={20} color="#6B7280" />
+        <View style={[tw`flex-row items-center rounded-xl px-4 py-3`, { backgroundColor: colors.background }]}>
+          <Search size={20} color={colors.textSecondary} />
           <TextInput
-            style={tw`flex-1 ml-3 text-gray-900`}
+            style={[tw`flex-1 ml-3`, { color: colors.text }]}
             placeholder="Tìm kiếm bệnh viện..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCorrect={false}
@@ -195,7 +200,8 @@ const HospitalListScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#10B981']}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
@@ -203,8 +209,8 @@ const HospitalListScreen = () => {
           {/* Loading */}
           {loading && (
             <View style={tw`py-8`}>
-              <ActivityIndicator size="large" color="#10B981" />
-              <Text style={tw`text-center text-gray-600 mt-2`}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={[tw`text-center mt-2`, { color: colors.textSecondary }]}>
                 Đang tải danh sách bệnh viện...
               </Text>
             </View>
@@ -212,13 +218,13 @@ const HospitalListScreen = () => {
 
           {/* Error */}
           {error && !loading && (
-            <View style={tw`bg-red-50 p-4 rounded-xl mb-4`}>
-              <Text style={tw`text-red-700 text-center`}>{error}</Text>
+            <View style={[tw`p-4 rounded-xl mb-4`, { backgroundColor: `#ef444420` }]}>
+              <Text style={[tw`text-center`, { color: '#ef4444' }]}>{error}</Text>
               <TouchableOpacity
-                style={tw`bg-red-100 px-4 py-2 rounded-lg mt-2`}
+                style={[tw`px-4 py-2 rounded-lg mt-2`, { backgroundColor: `#ef444430` }]}
                 onPress={loadHospitals}
               >
-                <Text style={tw`text-red-700 text-center font-medium`}>
+                <Text style={[tw`text-center font-medium`, { color: '#ef4444' }]}>
                   Thử lại
                 </Text>
               </TouchableOpacity>
@@ -228,7 +234,7 @@ const HospitalListScreen = () => {
           {/* Results */}
           {!loading && !error && (
             <>
-              <Text style={tw`text-gray-600 mb-3`}>
+              <Text style={[{ color: colors.textSecondary }]}>
                 {hospitals.length} bệnh viện được tìm thấy
               </Text>
               
@@ -236,8 +242,8 @@ const HospitalListScreen = () => {
                 hospitals.map(renderHospitalCard)
               ) : (
                 <View style={tw`py-12 items-center`}>
-                  <HospitalIcon size={48} color="#D1D5DB" />
-                  <Text style={tw`text-gray-500 text-center mt-3`}>
+                  <HospitalIcon size={48} color={colors.textSecondary} />
+                  <Text style={[tw`text-center mt-3`, { color: colors.textSecondary }]}>
                     {searchQuery 
                       ? `Không tìm thấy bệnh viện nào với từ khóa "${searchQuery}"`
                       : 'Không có bệnh viện nào'

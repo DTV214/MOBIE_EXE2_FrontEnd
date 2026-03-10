@@ -27,7 +27,7 @@ const ConfirmPaymentScreen = () => {
   const [loading, setLoading] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [polling, setPolling] = useState(false);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!plan) {

@@ -1,6 +1,5 @@
 // src/presentation/navigation/MainTabNavigator.tsx
 import React from 'react';
-import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   Home,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react-native';
 import tw from '../../utils/tailwind';
 import { moderateScale, fs, verticalScale, isTablet, isSmallDevice } from '../../utils/responsive';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Import các màn hình
 import DashboardScreen from '../screens/Dashboard_Screen/DashboardScreen';
@@ -30,7 +30,7 @@ const Tab = createBottomTabNavigator();
 // Tách hàm render icon để code gọn gàng - dùng responsive icon size
 const renderTabBarIcon =
   (routeName: string) =>
-  ({ color, size }: { color: string; size: number }) => {
+  ({ color }: { color: string; size: number }) => {
     // Scale icon size cho phù hợp thiết bị
     const iconSize = moderateScale(isSmallDevice() ? 20 : 22, 0.3);
     switch (routeName) {
@@ -56,17 +56,22 @@ const TAB_BAR_HEIGHT = verticalScale(isTablet() ? 70 : 60);
 const TAB_LABEL_SIZE = fs(isSmallDevice() ? 9 : 10);
 
 const MainTabNavigator = () => {
+  const { colors, isDarkMode } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#7FB069', // Màu xanh chủ đạo
-        tabBarInactiveTintColor: '#9CA3AF', // Màu xám
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          ...tw`bg-white border-t border-gray-100 shadow-lg`,
+          ...tw`border-t shadow-lg`,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           height: TAB_BAR_HEIGHT,
           paddingBottom: verticalScale(4),
           paddingTop: verticalScale(4),
+          elevation: isDarkMode ? 0 : 8,
         },
         tabBarLabelStyle: {
           fontSize: TAB_LABEL_SIZE,

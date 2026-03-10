@@ -32,10 +32,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { MealType } from '../../../domain/entities/MealLog';
+import { useTheme } from '../../../contexts/ThemeContext';
 import ExercisePickerModal from './ExercisePickerModal';
 
 const DailyLogScreen = () => {
   const navigation = useNavigation<any>();
+  const { isDarkMode, colors } = useTheme();
 
   // --- Store Data ---
   const {
@@ -181,21 +183,35 @@ const DailyLogScreen = () => {
             <TouchableOpacity
               key={index}
               onPress={() => setSelectedDate(dateStr)}
-              style={tw`items-center justify-center w-14 h-20 mx-1.5 rounded-3xl ${
-                isSelected ? 'bg-primary shadow-lg' : 'bg-gray-50'
-              }`}
+              style={[
+                tw`items-center justify-center w-14 h-20 mx-1.5 rounded-3xl`,
+                {
+                  backgroundColor: isSelected ? colors.primary : colors.surface,
+                  shadowColor: isSelected ? colors.primary : 'transparent',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isSelected ? 0.3 : 0,
+                  shadowRadius: isSelected ? 4 : 0,
+                  elevation: isSelected ? 4 : 0
+                }
+              ]}
             >
               <Text
-                style={tw`text-[10px] uppercase font-bold ${
-                  isSelected ? 'text-white/80' : 'text-gray-400'
-                }`}
+                style={[
+                  tw`text-[10px] uppercase font-bold`,
+                  {
+                    color: isSelected ? '#ffffff80' : colors.textSecondary
+                  }
+                ]}
               >
                 {date.toLocaleDateString('vi-VN', { weekday: 'short' })}
               </Text>
               <Text
-                style={tw`text-lg font-black ${
-                  isSelected ? 'text-white' : 'text-brandDark'
-                }`}
+                style={[
+                  tw`text-lg font-black`,
+                  {
+                    color: isSelected ? '#ffffff' : colors.text
+                  }
+                ]}
               >
                 {date.getDate()}
               </Text>
@@ -213,28 +229,31 @@ const DailyLogScreen = () => {
     !isExerciseEditVisible
   ) {
     return (
-      <View style={tw`flex-1 justify-center items-center bg-white`}>
-        <ActivityIndicator size="large" color="#7FB069" />
+      <View style={[tw`flex-1 justify-center items-center`, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={tw`flex-1 bg-white`}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.statusBarStyle}
+        backgroundColor={colors.statusBarBackground}
+      />
 
       {/* Header */}
       <View style={tw`px-6 pt-4 flex-row justify-between items-center`}>
         <View>
-          <Text style={tw`text-gray-400 text-sm font-medium italic`}>
+          <Text style={[tw`text-sm font-medium italic`, { color: colors.textSecondary }]}>
             Stay Healthy,
           </Text>
-          <Text style={tw`text-2xl font-black text-brandDark`}>
+          <Text style={[tw`text-2xl font-black`, { color: colors.text }]}>
             Nhật Ký Sức Khỏe
           </Text>
         </View>
-        <TouchableOpacity style={tw`bg-gray-100 p-3 rounded-2xl`}>
-          <CalendarDays size={20} color="#1F2937" />
+        <TouchableOpacity style={[tw`p-3 rounded-2xl`, { backgroundColor: colors.surface }]}>
+          <CalendarDays size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 

@@ -16,9 +16,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../viewmodels/useAuthStore'; // Import Store
 import { CommonActions } from '@react-navigation/native'; // Dùng để reset stack điều hướng
+import { useTheme } from '../../../contexts/ThemeContext'; // NEW: Theme context
 const SettingsScreen = () => {
   const navigation = useNavigation<any>();
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const { isDarkMode, toggleDarkMode, colors } = useTheme(); // NEW: Use theme context
   const logout = useAuthStore(state => state.logout); // Lấy hàm logout từ store
   const handleLogout = async () => {
     await logout();
@@ -32,15 +33,18 @@ const SettingsScreen = () => {
     );
   };
   return (
-    <View style={tw`flex-1 bg-background`}>
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View
-        style={tw`pt-12 pb-4 px-6 bg-white flex-row items-center border-b border-gray-50`}
+        style={[
+          tw`pt-12 pb-4 px-6 flex-row items-center border-b`,
+          { backgroundColor: colors.surface, borderBottomColor: colors.border }
+        ]}
       >
         <TouchableOpacity onPress={() => navigation.goBack()} style={tw`mr-4`}>
-          <ChevronLeft size={24} color="#1F2937" />
+          <ChevronLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={tw`text-xl font-bold text-dark`}>Cài đặt</Text>
+        <Text style={[tw`text-xl font-bold`, { color: colors.text }]}>Cài đặt</Text>
       </View>
 
       <ScrollView
@@ -49,11 +53,17 @@ const SettingsScreen = () => {
       >
         {/* Section: Tài khoản */}
         <Text
-          style={tw`text-sm font-bold text-gray-400 uppercase tracking-wider mb-4`}
+          style={[
+            tw`text-sm font-bold uppercase tracking-wider mb-4`,
+            { color: colors.textMuted }
+          ]}
         >
           Tài khoản
         </Text>
-        <View style={tw`bg-white rounded-3xl p-2 mb-8 shadow-sm`}>
+        <View style={[
+          tw`rounded-3xl p-2 mb-8`,
+          { backgroundColor: colors.surface, shadowColor: colors.shadow }
+        ]}>
           <SettingItem
             icon={<User size={20} color="#22C55E" />}
             title="Thông tin cá nhân"
@@ -76,27 +86,42 @@ const SettingsScreen = () => {
 
         {/* Section: Ứng dụng */}
         <Text
-          style={tw`text-sm font-bold text-gray-400 uppercase tracking-wider mb-4`}
+          style={[
+            tw`text-sm font-bold uppercase tracking-wider mb-4`,
+            { color: colors.textMuted }
+          ]}
         >
           Ứng dụng
         </Text>
-        <View style={tw`bg-white rounded-3xl p-2 mb-8 shadow-sm`}>
+        <View style={[
+          tw`rounded-3xl p-2 mb-8`,
+          { backgroundColor: colors.surface, shadowColor: colors.shadow }
+        ]}>
           <View
-            style={tw`flex-row justify-between items-center p-4 border-b border-gray-50`}
+            style={[
+              tw`flex-row justify-between items-center p-4 border-b`,
+              { borderBottomColor: colors.border }
+            ]}
           >
             <View style={tw`flex-row items-center`}>
-              <View style={tw`bg-gray-100 p-2 rounded-xl mr-3`}>
-                <Moon size={20} color="#6B7280" />
+              <View style={[
+                tw`p-2 rounded-xl mr-3`,
+                { backgroundColor: isDarkMode ? colors.primaryLight : '#F3F4F6' }
+              ]}>
+                <Moon size={20} color={isDarkMode ? colors.primary : '#6B7280'} />
               </View>
-              <Text style={tw`text-base font-medium text-dark`}>
+              <Text style={[
+                tw`text-base font-medium`,
+                { color: colors.text }
+              ]}>
                 Chế độ tối
               </Text>
             </View>
             <Switch
               value={isDarkMode}
-              onValueChange={setIsDarkMode}
-              trackColor={{ false: '#E5E7EB', true: '#BBF7D0' }}
-              thumbColor={isDarkMode ? '#22C55E' : '#F3F4F6'}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={isDarkMode ? colors.primary : '#F3F4F6'}
             />
           </View>
           <SettingItem
@@ -109,7 +134,10 @@ const SettingsScreen = () => {
         {/* Đăng xuất */}
         <TouchableOpacity
           onPress={handleLogout} // Gắn sự kiện nhấn nút
-          style={tw`flex-row items-center justify-center p-4 bg-red-50 rounded-2xl mb-10`}
+          style={[
+            tw`flex-row items-center justify-center p-4 rounded-2xl mb-10`,
+            { backgroundColor: isDarkMode ? '#7F1D1D' : '#FEF2F2' }
+          ]}
         >
           <LogOut size={20} color="#EF4444" />
           <Text style={tw`text-red-600 font-bold ml-2`}>Đăng xuất</Text>
@@ -119,18 +147,34 @@ const SettingsScreen = () => {
   );
 };
 
-const SettingItem = ({ icon, title, border = true, onPress }: any) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={tw`flex-row justify-between items-center p-4 ${border ? 'border-b border-gray-50' : ''
-      }`}
-  >
-    <View style={tw`flex-row items-center`}>
-      <View style={tw`bg-primaryLight p-2 rounded-xl mr-3`}>{icon}</View>
-      <Text style={tw`text-base font-medium text-dark`}>{title}</Text>
-    </View>
-    <ChevronRight size={18} color="#9CA3AF" />
-  </TouchableOpacity>
-);
+const SettingItem = ({ icon, title, border = true, onPress }: any) => {
+  const { colors } = useTheme();
+  
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        tw`flex-row justify-between items-center p-4`,
+        border && { borderBottomWidth: 1, borderBottomColor: colors.border }
+      ]}
+    >
+      <View style={tw`flex-row items-center`}>
+        <View style={[
+          tw`p-2 rounded-xl mr-3`,
+          { backgroundColor: colors.primaryLight }
+        ]}>
+          {icon}
+        </View>
+        <Text style={[
+          tw`text-base font-medium`,
+          { color: colors.text }
+        ]}>
+          {title}
+        </Text>
+      </View>
+      <ChevronRight size={18} color={colors.textMuted} />
+    </TouchableOpacity>
+  );
+};
 
 export default SettingsScreen;

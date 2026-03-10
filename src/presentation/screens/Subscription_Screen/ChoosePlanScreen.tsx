@@ -15,8 +15,10 @@ import { useNavigation } from '@react-navigation/native';
 import { subscriptionRepository } from '../../../di/Container';
 import { ServicePlan } from '../../../domain/entities/Subscription';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const ChoosePlanScreen = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const [plans, setPlans] = useState<ServicePlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
@@ -75,18 +77,18 @@ const ChoosePlanScreen = () => {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 bg-background items-center justify-center`}>
-        <ActivityIndicator size="large" color="#7FB069" />
+      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={tw`flex-1 bg-background`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#7FB069" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.primary} />
 
       {/* Header */}
-      <View style={tw`bg-primary pt-14 pb-6 px-6`}>
+      <View style={[tw`pt-14 pb-6 px-6`, { backgroundColor: colors.primary }]}>
         <View style={tw`flex-row items-center mb-4`}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color="#FFFFFF" />
@@ -100,7 +102,7 @@ const ChoosePlanScreen = () => {
       </View>
 
       {/* Progress Indicator */}
-      <View style={tw`bg-white px-6 py-4 border-b border-gray-100`}>
+      <View style={[tw`px-6 py-4 border-b`, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={tw`flex-row justify-between items-center`}>
           {[
             { label: 'Chọn gói', step: 1 },
@@ -110,19 +112,28 @@ const ChoosePlanScreen = () => {
           ].map((item, index) => (
             <View key={index} style={tw`flex-1 items-center`}>
               <View
-                style={tw`w-8 h-8 rounded-full items-center justify-center ${item.step === 1 ? 'bg-primary' : 'bg-gray-200'
-                  }`}
+                style={[
+                  tw`w-8 h-8 rounded-full items-center justify-center`,
+                  { backgroundColor: item.step === 1 ? colors.primary : colors.border }
+                ]}
               >
                 <Text
-                  style={tw`font-bold text-xs ${item.step === 1 ? 'text-white' : 'text-textSub'
-                    }`}
+                  style={[
+                    tw`font-bold text-xs`,
+                    { color: item.step === 1 ? '#ffffff' : colors.textSecondary }
+                  ]}
                 >
                   {item.step}
                 </Text>
               </View>
               <Text
-                style={tw`text-[10px] mt-1 ${item.step === 1 ? 'text-primary font-semibold' : 'text-textSub'
-                  }`}
+                style={[
+                  tw`text-[10px] mt-1`,
+                  { 
+                    color: item.step === 1 ? colors.primary : colors.textSecondary,
+                    fontWeight: item.step === 1 ? '600' : 'normal'
+                  }
+                ]}
               >
                 {item.label}
               </Text>
@@ -147,20 +158,22 @@ const ChoosePlanScreen = () => {
       </ScrollView>
 
       {/* Continue Button */}
-      <View style={tw`bg-white border-t border-gray-100 px-6 py-4`}>
+      <View style={[tw`border-t px-6 py-4`, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!selectedPlanId}
           activeOpacity={0.9}
         >
           <LinearGradient
-            colors={['#7FB069', '#6A9A5A']}
+            colors={[colors.primary, colors.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={tw`py-4 rounded-2xl items-center ${!selectedPlanId ? 'opacity-50' : ''
-              }`}
+            style={[
+              tw`py-4 rounded-2xl items-center`,
+              !selectedPlanId && tw`opacity-50`
+            ]}
           >
-            <Text style={tw`text-white font-bold text-base`}>
+            <Text style={[tw`font-bold text-base`, { color: '#ffffff' }]}>
               Đi tới thanh toán
             </Text>
           </LinearGradient>
@@ -198,6 +211,7 @@ const getFeatureLabel = (code: string): string => {
 };
 
 const PlanCard = ({ plan, isSelected, isCurrentPlan, onSelect }: PlanCardProps) => {
+  const { colors } = useTheme();
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
@@ -212,12 +226,16 @@ const PlanCard = ({ plan, isSelected, isCurrentPlan, onSelect }: PlanCardProps) 
   return (
     <TouchableOpacity
       onPress={onSelect}
-      style={tw`mb-4 rounded-2xl overflow-hidden ${isCurrentPlan
-        ? 'border-2 border-amber-400'
-        : isSelected
-          ? 'border-2 border-primary'
-          : 'border border-gray-200'
-        }`}
+      style={[
+        tw`mb-4 rounded-2xl overflow-hidden border-2`,
+        {
+          borderColor: isCurrentPlan
+            ? '#F59E0B'
+            : isSelected
+            ? colors.primary
+            : colors.border
+        }
+      ]}
     >
       {/* Current Plan Badge */}
       {isCurrentPlan && (
@@ -229,39 +247,44 @@ const PlanCard = ({ plan, isSelected, isCurrentPlan, onSelect }: PlanCardProps) 
         </View>
       )}
       {!isCurrentPlan && isPremium && plan.periodValue >= 6 && (
-        <View style={tw`bg-primary px-4 py-2 items-center`}>
-          <Text style={tw`text-white font-bold text-xs`}>
+        <View style={[tw`px-4 py-2 items-center`, { backgroundColor: colors.primary }]}>
+          <Text style={[tw`font-bold text-xs`, { color: '#ffffff' }]}>
             Tiết kiệm 16%
           </Text>
         </View>
       )}
-      <View style={tw`bg-white p-6`}>
+      <View style={[tw`p-6`, { backgroundColor: colors.surface }]}>
         <View style={tw`flex-row justify-between items-start mb-4`}>
           <View style={tw`flex-1`}>
-            <Text style={tw`text-brandDark font-bold text-xl mb-1`}>
+            <Text style={[tw`font-bold text-xl mb-1`, { color: colors.text }]}>
               {plan.name}
             </Text>
-            <Text style={tw`text-textSub text-sm`}>
+            <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
               {formatPrice(plan.price)} VND / {getPeriodText(plan.periodValue, plan.periodUnit)}
             </Text>
           </View>
           <View
-            style={tw`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
-              }`}
+            style={[
+              tw`w-6 h-6 rounded-full border-2 items-center justify-center`,
+              {
+                borderColor: isSelected ? colors.primary : colors.border,
+                backgroundColor: isSelected ? colors.primary : 'transparent'
+              }
+            ]}
           >
             {isSelected && <Check size={16} color="#FFFFFF" />}
           </View>
         </View>
 
         {/* Description */}
-        <Text style={tw`text-textSub text-xs mb-3`}>{plan.description}</Text>
+        <Text style={[tw`text-xs mb-3`, { color: colors.textSecondary }]}>{plan.description}</Text>
 
         {/* Features */}
-        <View style={tw`border-t border-gray-100 pt-4`}>
+        <View style={[tw`border-t pt-4`, { borderTopColor: colors.border }]}>
           {plan.features.map((feature, index) => (
             <View key={index} style={tw`flex-row items-center mb-2`}>
-              <Check size={16} color="#7FB069" />
-              <Text style={tw`text-brandDark text-sm ml-2 flex-1`}>
+              <Check size={16} color={colors.primary} />
+              <Text style={[tw`text-sm ml-2 flex-1`, { color: colors.text }]}>
                 {getFeatureLabel(feature)}
               </Text>
             </View>

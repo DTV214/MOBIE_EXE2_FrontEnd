@@ -1,21 +1,38 @@
 // src/presentation/navigation/AppNavigator.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './RootNavigator';
 import Toast from 'react-native-toast-message';
 import { checkOnboardingStatusUseCase } from '../../di/Container';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import tw from '../../utils/tailwind';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Import User Store để kiểm tra profile
 import { useUserStore } from '../viewmodels/useUserStore';
 
 const AppNavigator = () => {
+  const { colors, isDarkMode } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [initialRoute, setInitialRoute] = useState<string | null>(null);
+
+  const navigationTheme = useMemo(() => {
+    const baseTheme = isDarkMode ? DarkTheme : DefaultTheme;
+    return {
+      ...baseTheme,
+      colors: {
+        ...baseTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.border,
+      },
+    };
+  }, [colors, isDarkMode]);
 
   useEffect(() => {
     checkAppState();
@@ -66,15 +83,15 @@ const AppNavigator = () => {
 
   if (isLoading || !initialRoute) {
     return (
-      <View style={tw`flex-1 items-center justify-center bg-white`}>
-        <ActivityIndicator size="large" color="#7FB069" />
+      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}> 
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <RootNavigator initialRouteName={initialRoute} />
       </NavigationContainer>
       <Toast />

@@ -32,6 +32,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { launchImageLibrary, Asset } from 'react-native-image-picker';
 import { useForumStore } from '../../viewmodels/useForumStore';
 import { useCommentStore } from '../../viewmodels/useCommentStore';
+import { useTheme } from '../../../contexts/ThemeContext';
 import CommentItem from '../../components/CommentItem';
 import { Comment } from '../../../domain/entities/Comment';
 import Toast from 'react-native-toast-message';
@@ -43,6 +44,7 @@ const ForumDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { postId } = route.params || {};
+  const { colors } = useTheme();
 
   // 1. Kết nối Stores - Lấy thêm toggleLike để xử lý thả tim
   const {
@@ -133,8 +135,8 @@ const ForumDetailScreen = () => {
 
   if (isDetailLoading || !currentPost) {
     return (
-      <View style={tw`flex-1 bg-white items-center justify-center`}>
-        <ActivityIndicator color="#7FB069" size="large" />
+      <View style={[tw`flex-1 items-center justify-center`, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -144,8 +146,11 @@ const ForumDetailScreen = () => {
   )}&background=7FB069&color=fff&bold=true`;
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.statusBarStyle}
+        backgroundColor={colors.background}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -154,21 +159,30 @@ const ForumDetailScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
           {/* Header */}
           <View
-            style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-50 flex-row items-center justify-between`}
+            style={[
+              tw`pt-14 pb-4 px-6 border-b flex-row items-center justify-between`,
+              {
+                backgroundColor: colors.background,
+                borderBottomColor: colors.border
+              }
+            ]}
           >
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={tw`p-2 -ml-2`}
             >
-              <ChevronLeft size={24} color="#1F2937" />
+              <ChevronLeft size={24} color={colors.text} />
             </TouchableOpacity>
             <Text
-              style={tw`text-base font-black text-brandDark uppercase tracking-tighter`}
+              style={[
+                tw`text-base font-black uppercase tracking-tighter`,
+                { color: colors.text }
+              ]}
             >
               Chi tiết bài viết
             </Text>
             <TouchableOpacity style={tw`p-2 -mr-2`}>
-              <Bookmark size={22} color="#9CA3AF" />
+              <Bookmark size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -179,30 +193,33 @@ const ForumDetailScreen = () => {
             <View style={tw`flex-row items-center`}>
               <Image
                 source={{ uri: authorAvatar }}
-                style={tw`w-12 h-12 rounded-full border-2 border-[#7FB069]/20`}
+                style={[
+                  tw`w-12 h-12 rounded-full border-2`,
+                  { borderColor: `${colors.primary}30` }
+                ]}
               />
               <View style={tw`ml-3`}>
                 <View style={tw`flex-row items-center`}>
-                  <Text style={tw`text-brandDark font-bold text-base mr-1`}>
+                  <Text style={[tw`font-bold text-base mr-1`, { color: colors.text }]}>
                     {currentPost.authorName}
                   </Text>
-                  <Verified size={14} color="#7FB069" fill="#7FB069" />
+                  <Verified size={14} color={colors.primary} fill={colors.primary} />
                 </View>
                 <View style={tw`flex-row items-center mt-0.5`}>
-                  <Clock size={10} color="#9CA3AF" />
-                  <Text style={tw`text-gray-400 text-[10px] ml-1`}>
+                  <Clock size={10} color={colors.textSecondary} />
+                  <Text style={[tw`text-[10px] ml-1`, { color: colors.textSecondary }]}>
                     {currentPost.createdAt}
                   </Text>
                 </View>
               </View>
             </View>
-            <TouchableOpacity style={tw`bg-gray-50 p-2 rounded-full`}>
-              <MoreVertical size={18} color="#9CA3AF" />
+            <TouchableOpacity style={[tw`p-2 rounded-full`, { backgroundColor: colors.surface }]}>
+              <MoreVertical size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
           <View style={tw`px-6 mb-6`}>
-            <Text style={tw`text-brandDark text-[17px] leading-7 font-medium`}>
+            <Text style={[tw`text-[17px] leading-7 font-medium`, { color: colors.text }]}>
               {currentPost.content}
             </Text>
           </View>
@@ -226,7 +243,10 @@ const ForumDetailScreen = () => {
                   >
                     <Image
                       source={{ uri: url }}
-                      style={tw`w-full h-80 rounded-[32px] bg-gray-100 shadow-lg`}
+                      style={[
+                        tw`w-full h-80 rounded-[32px] shadow-lg`,
+                        { backgroundColor: colors.surface }
+                      ]}
                       resizeMode="cover"
                     />
                     <View
@@ -244,14 +264,20 @@ const ForumDetailScreen = () => {
 
           {/* Interaction Bar - SỬA LỖI TYM TẠI ĐÂY */}
           <View
-            style={tw`mx-6 mb-8 bg-[#F8FAFC] rounded-[28px] p-4 flex-row justify-between items-center`}
+            style={[
+              tw`mx-6 mb-8 rounded-[28px] p-4 flex-row justify-between items-center`,
+              { backgroundColor: colors.surface }
+            ]}
           >
             <View style={tw`flex-row items-center`}>
               {/* Nút Thả tim (Tym) được sửa lỗi sang TouchableOpacity và gắn hàm toggleLike */}
               <TouchableOpacity
                 onPress={() => toggleLike(currentPost.id)}
                 activeOpacity={0.7}
-                style={tw`flex-row items-center bg-white px-4 py-2 rounded-2xl shadow-sm mr-3`}
+                style={[
+                  tw`flex-row items-center px-4 py-2 rounded-2xl shadow-sm mr-3`,
+                  { backgroundColor: colors.background }
+                ]}
               >
                 <Heart
                   size={22}
@@ -259,28 +285,31 @@ const ForumDetailScreen = () => {
                   color={currentPost.isLiked ? '#FF5252' : '#9CA3AF'}
                   fill={currentPost.isLiked ? '#FF5252' : 'transparent'}
                 />
-                <Text style={tw`text-sm text-brandDark ml-2 font-black`}>
+                <Text style={[tw`text-sm ml-2 font-black`, { color: colors.text }]}>
                   {currentPost.heart}
                 </Text>
               </TouchableOpacity>
 
               <View
-                style={tw`flex-row items-center bg-white px-4 py-2 rounded-2xl shadow-sm`}
+                style={[
+                  tw`flex-row items-center px-4 py-2 rounded-2xl shadow-sm`,
+                  { backgroundColor: colors.background }
+                ]}
               >
-                <MessageCircle size={22} color="#7FB069" />
-                <Text style={tw`text-sm text-brandDark ml-2 font-black`}>
+                <MessageCircle size={22} color={colors.primary} />
+                <Text style={[tw`text-sm ml-2 font-black`, { color: colors.text }]}>
                   {currentPost.activeComments}
                 </Text>
               </View>
             </View>
-            <TouchableOpacity style={tw`bg-white p-3 rounded-2xl shadow-sm`}>
-              <Share2 size={22} color="#1F2937" />
+            <TouchableOpacity style={[tw`p-3 rounded-2xl shadow-sm`, { backgroundColor: colors.background }]}>
+              <Share2 size={22} color={colors.text} />
             </TouchableOpacity>
           </View>
 
           {/* Danh sách bình luận */}
           <View style={tw`px-6 mb-10 pb-20`}>
-            <Text style={tw`text-xl font-black text-brandDark mb-6`}>
+            <Text style={[tw`text-xl font-black mb-6`, { color: colors.text }]}>
               Thảo luận cộng đồng ({currentPost.activeComments})
             </Text>
             {Array.isArray(comments) && comments.length > 0 ? (
@@ -302,14 +331,20 @@ const ForumDetailScreen = () => {
               ))
             ) : (
               <View
-                style={tw`bg-gray-50 rounded-3xl p-8 items-center border border-dashed border-gray-200`}
+                style={[
+                  tw`rounded-3xl p-8 items-center border border-dashed`,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border
+                  }
+                ]}
               >
                 {isCommentsLoading ? (
-                  <ActivityIndicator color="#7FB069" />
+                  <ActivityIndicator color={colors.primary} />
                 ) : (
                   <>
-                    <MessageCircle size={40} color="#D1D5DB" />
-                    <Text style={tw`text-gray-400 mt-2 font-medium`}>
+                    <MessageCircle size={40} color={colors.textSecondary} />
+                    <Text style={[tw`mt-2 font-medium`, { color: colors.textSecondary }]}>
                       Hãy là người đầu tiên chia sẻ cảm nghĩ!
                     </Text>
                   </>
@@ -320,17 +355,34 @@ const ForumDetailScreen = () => {
         </ScrollView>
 
         {/* Input Bar */}
-        <View style={tw`bg-white border-t border-gray-100 shadow-lg`}>
+        <View
+          style={[
+            tw`border-t shadow-lg`,
+            {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border
+            }
+          ]}
+        >
           {selectedFiles.length > 0 && (
             <ScrollView
               horizontal
-              style={tw`flex-row px-4 py-3 bg-white border-b border-gray-50`}
+              style={[
+                tw`flex-row px-4 py-3 border-b`,
+                {
+                  backgroundColor: colors.background,
+                  borderBottomColor: colors.border
+                }
+              ]}
             >
               {selectedFiles.map((file, idx) => (
                 <View key={idx} style={tw`relative mr-3`}>
                   <Image
                     source={{ uri: file.uri }}
-                    style={tw`w-16 h-16 rounded-xl bg-gray-100`}
+                    style={[
+                      tw`w-16 h-16 rounded-xl`,
+                      { backgroundColor: colors.surface }
+                    ]}
                   />
                   <TouchableOpacity
                     onPress={() =>
@@ -349,15 +401,18 @@ const ForumDetailScreen = () => {
 
           {(replyTo || editingComment) && (
             <View
-              style={tw`flex-row justify-between items-center bg-[#7FB069]/10 px-4 py-2`}
+              style={[
+                tw`flex-row justify-between items-center px-4 py-2`,
+                { backgroundColor: `${colors.primary}20` }
+              ]}
             >
-              <Text style={tw`text-[11px] text-[#7FB069] font-black italic`}>
+              <Text style={[tw`text-[11px] font-black italic`, { color: colors.primary }]}>
                 {editingComment
                   ? 'ĐANG CHỈNH SỬA...'
-                  : `ĐANG TRẢ LỜI NGƯỜI DÙNG ${replyTo?.accountId}`}
+                  : `ĐANG TRẢ LỜI NGƯI DÙNG ${replyTo?.accountId}`}
               </Text>
               <TouchableOpacity onPress={cancelAction}>
-                <X size={14} color="#7FB069" />
+                <X size={14} color={colors.primary} />
               </TouchableOpacity>
             </View>
           )}
@@ -366,19 +421,31 @@ const ForumDetailScreen = () => {
             {!editingComment && (
               <TouchableOpacity
                 onPress={handlePickImage}
-                style={tw`mr-3 bg-gray-50 p-2.5 rounded-full border border-gray-100`}
+                style={[
+                  tw`mr-3 p-2.5 rounded-full border`,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border
+                  }
+                ]}
               >
-                <Camera size={22} color="#7FB069" />
+                <Camera size={22} color={colors.primary} />
               </TouchableOpacity>
             )}
 
             <View
-              style={tw`flex-1 bg-gray-100 rounded-[22px] px-4 py-1.5 flex-row items-center`}
+              style={[
+                tw`flex-1 rounded-[22px] px-4 py-1.5 flex-row items-center`,
+                { backgroundColor: colors.surface }
+              ]}
             >
               <TextInput
                 placeholder="Viết bình luận..."
-                placeholderTextColor="#9CA3AF"
-                style={tw`flex-1 min-h-[40px] text-brandDark max-h-32 py-2 font-medium`}
+                placeholderTextColor={colors.textSecondary}
+                style={[
+                  tw`flex-1 min-h-[40px] max-h-32 py-2 font-medium`,
+                  { color: colors.text }
+                ]}
                 multiline
                 value={commentText}
                 onChangeText={setCommentText}
@@ -389,7 +456,10 @@ const ForumDetailScreen = () => {
                   isActionLoading ||
                   (!commentText.trim() && selectedFiles.length === 0)
                 }
-                style={tw`ml-2 p-2 bg-[#7FB069] rounded-full shadow-sm`}
+                style={[
+                  tw`ml-2 p-2 rounded-full shadow-sm`,
+                  { backgroundColor: colors.primary }
+                ]}
               >
                 {isActionLoading ? (
                   <ActivityIndicator size="small" color="white" />

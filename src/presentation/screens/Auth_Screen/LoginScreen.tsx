@@ -20,9 +20,11 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 // Import ViewModels
 import { useAuthStore } from '../../viewmodels/useAuthStore';
 import { useUserStore } from '../../viewmodels/useUserStore';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
+  const { isDarkMode, colors } = useTheme();
 
   // Lấy Actions từ Store
   const {
@@ -46,7 +48,11 @@ const LoginScreen = () => {
   const handleGoogleLogin = async () => {
     console.log('--- [STEP 1] User clicked Google Login Button ---');
     try {
+      // Add small delay to ensure Activity is ready
+      await new Promise<void>(resolve => setTimeout(resolve, 100));
+      
       const success = await loginWithGoogle();
+
 
       if (success) {
         console.log('--- [FLOW] Auth Success. Now fetching User Profile ---');
@@ -93,12 +99,15 @@ const LoginScreen = () => {
   };
 
   return (
-    <View style={tw`flex-1 bg-white`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.statusBarStyle}
+        backgroundColor={colors.statusBarBackground}
+      />
 
       {/* Background Gradient */}
       <LinearGradient
-        colors={['#E8F5E3', '#FFFFFF', '#FFFFFF']}
+        colors={isDarkMode ? [colors.background, colors.surface] : ['#E8F5E3', '#FFFFFF', '#FFFFFF']}
         style={tw`flex-1`}
       >
         <ScrollView
@@ -112,26 +121,42 @@ const LoginScreen = () => {
             <View style={tw`items-center mb-8`}>
               <View
                 style={[
-                  tw`bg-primary rounded-full items-center justify-center mb-6 shadow-lg`,
-                  { width: scale(88), height: scale(88) },
+                  tw`rounded-full items-center justify-center mb-6 shadow-lg`,
+                  {
+                    width: scale(88),
+                    height: scale(88),
+                    backgroundColor: colors.primary
+                  },
                 ]}
               >
                 <Leaf size={moderateScale(44, 0.3)} color="#FFFFFF" />
               </View>
-              <Text style={[tw`text-primary font-black mb-2`, { fontSize: fs(28) }]}>
+              <Text style={[
+                tw`font-black mb-2`,
+                { fontSize: fs(28), color: colors.primary }
+              ]}>
                 LanhCare
               </Text>
-              <Text style={[tw`text-textSub text-center`, { fontSize: fs(14), lineHeight: fs(20) }]}>
+              <Text style={[
+                tw`text-center`,
+                { fontSize: fs(14), lineHeight: fs(20), color: colors.textSecondary }
+              ]}>
                 Ứng dụng theo dõi sức khỏe toàn diện
               </Text>
             </View>
 
             {/* Welcome Message */}
             <View style={tw`mb-8`}>
-              <Text style={[tw`font-black text-brandDark mb-3 text-center`, { fontSize: fs(26) }]}>
+              <Text style={[
+                tw`font-black mb-3 text-center`,
+                { fontSize: fs(26), color: colors.text }
+              ]}>
                 Chào mừng trở lại!
               </Text>
-              <Text style={[tw`text-textSub text-center`, { fontSize: fs(15), lineHeight: fs(22) }]}>
+              <Text style={[
+                tw`text-center`,
+                { fontSize: fs(15), lineHeight: fs(22), color: colors.textSecondary }
+              ]}>
                 Tiếp tục hành trình chăm sóc sức khỏe{'\n'}cùng chúng tôi
               </Text>
             </View>
@@ -166,7 +191,7 @@ const LoginScreen = () => {
               style={tw`mb-6 ${authLoading ? 'opacity-50' : ''}`}
             >
               <LinearGradient
-                colors={['#7FB069', '#6A9A5A']}
+                colors={[colors.primary, `${colors.primary}CC`]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[tw`rounded-2xl flex-row items-center justify-center shadow-lg`, { height: verticalScale(56) }]}
@@ -192,11 +217,14 @@ const LoginScreen = () => {
             </TouchableOpacity>
 
             {/* Footer */}
-            <Text style={[tw`text-textSub text-center`, { fontSize: fs(13), lineHeight: fs(20) }]}>
+            <Text style={[
+              tw`text-center`,
+              { fontSize: fs(13), lineHeight: fs(20), color: colors.textSecondary }
+            ]}>
               Bằng cách đăng nhập, bạn đồng ý với{'\n'}
-              <Text style={tw`text-primary font-semibold`}>Điều khoản sử dụng</Text>
+              <Text style={[tw`font-semibold`, { color: colors.primary }]}>Điều khoản sử dụng</Text>
               {' và '}
-              <Text style={tw`text-primary font-semibold`}>Chính sách bảo mật</Text>
+              <Text style={[tw`font-semibold`, { color: colors.primary }]}>Chính sách bảo mật</Text>
             </Text>
           </View>
         </ScrollView>
@@ -212,25 +240,39 @@ interface FeatureItemProps {
   subtitle: string;
 }
 
-const FeatureItem = ({ icon: Icon, title, subtitle }: FeatureItemProps) => (
-  <View style={tw`flex-row items-center mb-4`}>
-    <View
-      style={[
-        tw`bg-primary/10 rounded-xl items-center justify-center`,
-        { width: scale(38), height: scale(38), marginRight: scale(14) },
-      ]}
-    >
-      <Icon size={moderateScale(18, 0.3)} color="#7FB069" />
+const FeatureItem = ({ icon: Icon, title, subtitle }: FeatureItemProps) => {
+  const { colors } = useTheme();
+  
+  return (
+    <View style={tw`flex-row items-center mb-4`}>
+      <View
+        style={[
+          tw`rounded-xl items-center justify-center`,
+          {
+            width: scale(38),
+            height: scale(38),
+            marginRight: scale(14),
+            backgroundColor: `${colors.primary}20`
+          }
+        ]}
+      >
+        <Icon size={moderateScale(18, 0.3)} color={colors.primary} />
+      </View>
+      <View style={tw`flex-1`}>
+        <Text style={[
+          tw`font-semibold mb-1`,
+          { fontSize: fs(13), color: colors.text }
+        ]}>
+          {title}
+        </Text>
+        <Text style={[
+          { fontSize: fs(11), lineHeight: fs(16), color: colors.textSecondary }
+        ]}>
+          {subtitle}
+        </Text>
+      </View>
     </View>
-    <View style={tw`flex-1`}>
-      <Text style={[tw`text-brandDark font-semibold mb-1`, { fontSize: fs(13) }]}>
-        {title}
-      </Text>
-      <Text style={[tw`text-textSub`, { fontSize: fs(11), lineHeight: fs(16) }]}>
-        {subtitle}
-      </Text>
-    </View>
-  </View>
-);
+  );
+};
 
 export default LoginScreen;

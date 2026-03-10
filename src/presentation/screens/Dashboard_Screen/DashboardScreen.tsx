@@ -8,6 +8,7 @@ import {
   StatusBar,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import { scale, moderateScale, verticalScale, fs } from '../../../utils/responsive';
@@ -28,6 +29,7 @@ import {
 // 1. Import Store User để lấy thông tin
 import { useUserStore } from '../../viewmodels/useUserStore';
 import { useStepStore } from '../../viewmodels/useStepStore';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 // Helper function: Dynamic greeting dựa trên thời gian
 const getDynamicGreeting = () => {
@@ -37,6 +39,15 @@ const getDynamicGreeting = () => {
   if (hour < 17) return { text: 'Chào buổi chiều', emoji: '☀️' };
   if (hour < 21) return { text: 'Chào buổi tối', emoji: '🌆' };
   return { text: 'Chúc ngủ ngon', emoji: '🌙' };
+};
+
+const calculateBmi = (weight?: number, height?: number) => {
+  if (!weight || !height) {
+    return null;
+  }
+
+  const heightInMeters = height / 100;
+  return weight / (heightInMeters * heightInMeters);
 };
 
 // Component QuickAccessCard được di chuyển ra ngoài để tránh re-render
@@ -58,36 +69,45 @@ const QuickAccessCard = ({
   onPress,
   onLongPress,
   disabled = false,
-}: QuickAccessCardProps) => (
-  <TouchableOpacity
-    onPress={disabled ? undefined : onPress}
-    onLongPress={disabled ? undefined : onLongPress}
-    activeOpacity={disabled ? 1 : 0.8}
-    style={[
-      tw`bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 mx-1 ${
-        disabled ? 'opacity-60' : ''
-      }`,
-      { padding: scale(14) },
-    ]}
-  >
+}: QuickAccessCardProps) => {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity
+      onPress={disabled ? undefined : onPress}
+      onLongPress={disabled ? undefined : onLongPress}
+      activeOpacity={disabled ? 1 : 0.8}
+      style={[
+        tw`rounded-2xl shadow-sm flex-1 mx-1 border ${
+          disabled ? 'opacity-60' : ''
+        }`,
+        { 
+          padding: scale(14), 
+          backgroundColor: colors.surface,
+          borderColor: colors.border 
+        },
+      ]}
+    >
     <View style={[
       tw`rounded-xl items-center justify-center`,
       { width: scale(44), height: scale(44), marginBottom: verticalScale(10) },
     ]}>
       <Icon size={moderateScale(22, 0.3)} color={color} />
     </View>
-    <Text style={[tw`text-brandDark font-bold mb-1`, { fontSize: fs(13) }]}>{title}</Text>
-    <Text style={[tw`text-textSub`, { fontSize: fs(11), lineHeight: fs(16) }]}>{subtitle}</Text>
+    <Text style={[tw`font-bold mb-1`, { fontSize: fs(13), color: colors.text }]}>{title}</Text>
+    <Text style={[{ fontSize: fs(11), lineHeight: fs(16), color: colors.textSecondary }]}>{subtitle}</Text>
   </TouchableOpacity>
-);
+  );
+};
 
 const DashboardScreen = () => {
   const navigation = useNavigation<any>();
+  const { colors } = useTheme();
   const greeting = getDynamicGreeting();
 
   // 2. Lấy user và health profile từ Store
   const { user, healthProfile, fetchUserProfile } = useUserStore();
-  const { todaySteps, isInitialized, isEnabled, isAvailable, isLoading: stepLoading, error: stepError, checkAvailability, enableStepTracking, disableStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
+  const { todaySteps, isEnabled, isAvailable, isLoading: stepLoading, error: stepError, checkAvailability, enableStepTracking, disableStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
+  const bmi = calculateBmi(healthProfile?.weightKg, healthProfile?.heightCm);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // State xử lý refresh
@@ -167,26 +187,26 @@ const DashboardScreen = () => {
 
   if (loading) {
     return (
-      <View style={tw`flex-1 bg-background`}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.statusBarBackground} />
         
         {/* Loading header */}
         <LinearGradient
-          colors={['#E8F5E3', '#FFFFFF']}
+          colors={[colors.primaryLight, colors.surface]}
           style={tw`pt-14 pb-8 px-6`}
         >
-          <View style={tw`h-20 bg-white/30 rounded-xl mb-4`} />
+          <View style={[tw`h-20 rounded-xl mb-4`, { backgroundColor: `${colors.surface}50` }]} />
         </LinearGradient>
         
         <View style={tw`px-6 pt-6`}>
           {/* Loading skeletons */}
           {[...Array(3)].map((_, i) => (
-            <View key={i} style={tw`bg-white rounded-2xl p-4 mb-4 h-24`} />
+            <View key={i} style={[tw`rounded-2xl p-4 mb-4 h-24`, { backgroundColor: colors.surface }]} />
           ))}
           
           <View style={tw`items-center mt-8`}>
-            <ActivityIndicator size="large" color="#7FB069" />
-            <Text style={tw`text-textSub mt-2`}>Đang tải dữ liệu sức khỏe...</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[tw`mt-2`, { color: colors.textSecondary }]}>Đang tải dữ liệu sức khỏe...</Text>
           </View>
         </View>
       </View>
@@ -194,8 +214,8 @@ const DashboardScreen = () => {
   }
 
   return (
-    <View style={tw`flex-1 bg-background`}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={colors.statusBarStyle} backgroundColor={colors.statusBarBackground} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -203,13 +223,17 @@ const DashboardScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#7FB069']}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
         {/* Header với greeting */}
         <LinearGradient
-          colors={['#E8F5E3', '#FFFFFF']}
+          colors={[
+            colors.primaryLight,
+            colors.surface
+          ]}
           style={[
             tw`px-6`,
             { paddingTop: verticalScale(48), paddingBottom: verticalScale(28) },
@@ -217,21 +241,21 @@ const DashboardScreen = () => {
         >
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <View style={tw`flex-1`}>
-              <Text style={[tw`text-primary font-bold mb-1`, { fontSize: fs(11) }]}>
+              <Text style={[tw`mb-1 font-bold`, { fontSize: fs(11), color: colors.primary }]}>
                 LÀNH CARE {greeting.emoji}
               </Text>
               {/* 3. Dynamic greeting với emoji */}
-              <Text style={[tw`font-black text-brandDark mb-1`, { fontSize: fs(22) }]}>
+              <Text style={[tw`font-black mb-1`, { fontSize: fs(22), color: colors.text }]}>
                 {greeting.text}, {user?.fullName?.split(' ').pop() || 'Bạn'}!
               </Text>
               <View style={tw`flex-row items-center`}>
-                <Text style={tw`text-textSub text-sm`}>
+                <Text style={[tw`text-sm`, { color: colors.textSecondary }]}>
                   Chăm sóc sức khỏe mỗi ngày
                 </Text>
                 {/* 4. Show BMI nếu có health profile */}
-                {healthProfile?.bmi && (
-                  <Text style={tw`text-primary text-xs font-semibold ml-2 bg-primaryLight px-2 py-1 rounded-lg`}>
-                    BMI: {healthProfile.bmi.toFixed(1)}
+                {bmi !== null && (
+                  <Text style={[tw`text-xs font-semibold ml-2 px-2 py-1 rounded-lg text-white`, { backgroundColor: colors.primaryLight }]}>
+                    BMI: {bmi.toFixed(1)}
                   </Text>
                 )}
               </View>
@@ -240,16 +264,19 @@ const DashboardScreen = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate('Hồ sơ')}
               style={[
-                tw`${
-                  healthProfile?.bmi 
-                    ? healthProfile.bmi < 18.5 
-                      ? 'bg-blue-500' 
-                      : healthProfile.bmi > 25 
-                      ? 'bg-orange-500' 
-                      : 'bg-primary'
-                    : 'bg-primary'
-                } rounded-full items-center justify-center border-2 border-white shadow-md`,
-                { width: scale(48), height: scale(48) },
+                tw`rounded-full items-center justify-center border-2 shadow-md`,
+                { 
+                  width: scale(48), 
+                  height: scale(48),
+                  backgroundColor: bmi !== null
+                    ? bmi < 18.5
+                      ? '#3B82F6'
+                      : bmi > 25
+                      ? '#F97316'
+                      : colors.primary
+                    : colors.primary,
+                  borderColor: colors.surface
+                },
               ]}
             >
               <Text style={[tw`text-white font-bold`, { fontSize: fs(16) }]}>
@@ -321,7 +348,7 @@ const DashboardScreen = () => {
 
           {/* Membership Section */}
           <TouchableOpacity
-            style={[tw`bg-white rounded-2xl flex-row items-center justify-between mb-6 shadow-sm border border-gray-100`, { padding: scale(14) }]}
+            style={[tw`rounded-2xl flex-row items-center justify-between mb-6 shadow-sm border`, { padding: scale(14), backgroundColor: colors.surface, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('ChoosePlan')}
           >
@@ -335,15 +362,15 @@ const DashboardScreen = () => {
                 <Crown size={moderateScale(22, 0.3)} color="#F59E0B" />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={[tw`text-brandDark font-bold mb-1`, { fontSize: fs(15) }]}>
+                <Text style={[tw`font-bold mb-1`, { fontSize: fs(15), color: colors.text }]}>
                   Gói Membership
                 </Text>
-                <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>
+                <Text style={[{ fontSize: fs(11), color: colors.textSecondary }]}>
                   Quản lý và nâng cấp tài khoản của bạn
                 </Text>
               </View>
             </View>
-            <ChevronRight size={moderateScale(18, 0.3)} color="#9CA3AF" />
+            <ChevronRight size={moderateScale(18, 0.3)} color={colors.textSecondary} />
           </TouchableOpacity>
 
           {/* Bottom spacing */}

@@ -20,6 +20,7 @@ import {
 import { ChevronLeft, Check, Ruler, Weight } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 // --- DATA MAPPING CHO UI ---
 const ACTIVITY_OPTIONS = [
@@ -69,6 +70,7 @@ const GOAL_OPTIONS = [
 ];
 
 const SurveyScreen = () => {
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const store = useSurveyStore();
 
@@ -300,28 +302,28 @@ const SurveyScreen = () => {
   );
 
   return (
-    <View style={tw`flex-1 bg-gray-50`}>
+    <View style={[tw`flex-1`, { backgroundColor: colors.background }]}>
       {/* Header Progress */}
-      <View style={tw`pt-12 pb-4 px-6 bg-white shadow-sm z-10`}>
+      <View style={[tw`pt-12 pb-4 px-6 shadow-sm z-10`, { backgroundColor: colors.surface }]}>
         <View style={tw`flex-row items-center justify-between mb-4`}>
           {store.currentStep > 1 ? (
             <TouchableOpacity onPress={store.prevStep}>
-              <ChevronLeft size={24} color="#374151" />
+              <ChevronLeft size={24} color={colors.text} />
             </TouchableOpacity>
           ) : (
             <View style={tw`w-6`} />
           )}
-          <Text style={tw`font-bold text-lg text-gray-800`}>
+          <Text style={[tw`font-bold text-lg`, { color: colors.text }]}>
             Bước {store.currentStep}/3
           </Text>
           <View style={tw`w-6`} />
         </View>
         {/* Progress Bar */}
-        <View style={tw`h-2 bg-gray-100 rounded-full overflow-hidden`}>
+        <View style={[tw`h-2 rounded-full overflow-hidden`, { backgroundColor: colors.border }]}>
           <View
             style={[
-              tw`h-full bg-green-500 rounded-full`,
-              { width: `${(store.currentStep / 3) * 100}%` },
+              tw`h-full rounded-full`,
+              { width: `${(store.currentStep / 3) * 100}%`, backgroundColor: colors.primary },
             ]}
           />
         </View>
@@ -339,10 +341,10 @@ const SurveyScreen = () => {
 
       {/* Footer Button */}
       <View
-        style={tw`absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100`}
+        style={[tw`absolute bottom-0 left-0 right-0 p-6 border-t`, { backgroundColor: colors.surface, borderTopColor: colors.border }]}
       >
         {store.error && (
-          <Text style={tw`text-red-500 text-center mb-2`}>{store.error}</Text>
+          <Text style={[tw`text-center mb-2`, { color: '#ef4444' }]}>{store.error}</Text>
         )}
         <TouchableOpacity
           onPress={handleNext}

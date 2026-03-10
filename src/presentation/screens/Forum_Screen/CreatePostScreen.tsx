@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { launchImageLibrary, Asset } from 'react-native-image-picker';
 import { useUserStore } from '../../viewmodels/useUserStore';
 import { useForumStore } from '../../viewmodels/useForumStore';
+import { useTheme } from '../../../contexts/ThemeContext';
 import Toast from 'react-native-toast-message';
 
 const MAX_IMAGES = 5;
@@ -28,6 +29,7 @@ const CreatePostScreen = () => {
   const navigation = useNavigation<any>();
   const { user } = useUserStore();
   const { createPost, isPublishing } = useForumStore();
+  const { colors } = useTheme();
 
   const [content, setContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<Asset[]>([]);
@@ -93,33 +95,39 @@ const CreatePostScreen = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={tw`flex-1 bg-white`}
+      style={[tw`flex-1`, { backgroundColor: colors.background }]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar
+        barStyle={colors.statusBarStyle}
+        backgroundColor={colors.statusBarBackground}
+      />
 
       {/* Header Section */}
       <View
-        style={tw`bg-white pt-14 pb-4 px-6 border-b border-gray-50 flex-row items-center justify-between shadow-sm z-10`}
+        style={[
+          tw`pt-14 pb-4 px-6 border-b shadow-sm z-10 flex-row items-center justify-between`,
+          { backgroundColor: colors.background, borderBottomColor: colors.border }
+        ]}
       >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={tw`p-2 -ml-2`}
         >
-          <X size={24} color="#1F2937" />
+          <X size={24} color={colors.text} />
         </TouchableOpacity>
 
-        <Text style={tw`text-lg font-black text-brandDark`}>Tạo bài viết</Text>
+        <Text style={[tw`text-lg font-black`, { color: colors.text }]}>Tạo bài viết</Text>
 
         <TouchableOpacity
           onPress={handlePublish}
           disabled={
             isPublishing || (!content.trim() && selectedImages.length === 0)
           }
-          style={tw`bg-[#7FB069] px-6 py-2.5 rounded-full flex-row items-center ${
-            isPublishing || (!content.trim() && selectedImages.length === 0)
-              ? 'opacity-40'
-              : ''
-          }`}
+          style={[
+            tw`px-6 py-2.5 rounded-full flex-row items-center`,
+            { backgroundColor: colors.primary },
+            (isPublishing || (!content.trim() && selectedImages.length === 0)) && tw`opacity-40`
+          ]}
         >
           {isPublishing ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
@@ -140,17 +148,26 @@ const CreatePostScreen = () => {
         <View style={tw`flex-row items-center mb-6`}>
           <Image
             source={{ uri: userAvatar }}
-            style={tw`w-12 h-12 rounded-full border-2 border-[#7FB069]/20`}
+            style={[
+              tw`w-12 h-12 rounded-full border-2`,
+              { borderColor: `${colors.primary}30` }
+            ]}
           />
           <View style={tw`ml-3`}>
-            <Text style={tw`text-brandDark font-bold text-base`}>
+            <Text style={[tw`font-bold text-base`, { color: colors.text }]}>
               {user?.fullName || 'Thành viên Lành Care'}
             </Text>
             <View
-              style={tw`bg-[#7FB069]/10 px-2 py-0.5 rounded-md self-start mt-1`}
+              style={[
+                tw`px-2 py-0.5 rounded-md self-start mt-1`,
+                { backgroundColor: `${colors.primary}20` }
+              ]}
             >
               <Text
-                style={tw`text-[10px] text-[#7FB069] font-black uppercase tracking-wider`}
+                style={[
+                  tw`text-[10px] font-black uppercase tracking-wider`,
+                  { color: colors.primary }
+                ]}
               >
                 Công khai
               </Text>
@@ -161,8 +178,11 @@ const CreatePostScreen = () => {
         {/* Input Area */}
         <TextInput
           placeholder="Bạn muốn chia sẻ điều gì về sức khỏe?"
-          placeholderTextColor="#9CA3AF"
-          style={tw`text-brandDark text-lg min-h-[180px] leading-7`}
+          placeholderTextColor={colors.textSecondary}
+          style={[
+            tw`text-lg min-h-[180px] leading-7`,
+            { color: colors.text }
+          ]}
           value={content}
           onChangeText={setContent}
           multiline
@@ -174,7 +194,7 @@ const CreatePostScreen = () => {
         {selectedImages.length > 0 && (
           <View style={tw`mb-10`}>
             <View style={tw`flex-row justify-between items-end mb-3`}>
-              <Text style={tw`text-gray-400 text-xs font-bold`}>
+              <Text style={[tw`text-xs font-bold`, { color: colors.textSecondary }]}>
                 HÌNH ẢNH ({selectedImages.length}/{MAX_IMAGES})
               </Text>
             </View>
@@ -187,7 +207,10 @@ const CreatePostScreen = () => {
                 <View key={index} style={tw`relative mr-4`}>
                   <Image
                     source={{ uri: img.uri }}
-                    style={tw`w-40 h-52 rounded-2xl bg-gray-100`}
+                    style={[
+                      tw`w-40 h-52 rounded-2xl`,
+                      { backgroundColor: colors.surface }
+                    ]}
                   />
                   <TouchableOpacity
                     onPress={() => removeImage(index)}
@@ -200,10 +223,16 @@ const CreatePostScreen = () => {
               {selectedImages.length < MAX_IMAGES && (
                 <TouchableOpacity
                   onPress={onSelectImage}
-                  style={tw`w-40 h-52 rounded-2xl border-2 border-dashed border-gray-200 items-center justify-center bg-gray-50 mr-4`}
+                  style={[
+                    tw`w-40 h-52 rounded-2xl border-2 border-dashed items-center justify-center mr-4`,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.surface
+                    }
+                  ]}
                 >
-                  <Plus size={30} color="#9CA3AF" />
-                  <Text style={tw`text-gray-400 font-bold text-xs mt-2`}>
+                  <Plus size={30} color={colors.textSecondary} />
+                  <Text style={[tw`font-bold text-xs mt-2`, { color: colors.textSecondary }]}>
                     THÊM TIẾP
                   </Text>
                 </TouchableOpacity>
@@ -215,43 +244,79 @@ const CreatePostScreen = () => {
 
       {/* Action Bar */}
       <View
-        style={tw`px-6 py-4 border-t border-gray-50 flex-row justify-around bg-white mb-4`}
+        style={[
+          tw`px-6 py-4 border-t flex-row justify-around mb-4`,
+          {
+            borderTopColor: colors.border,
+            backgroundColor: colors.background
+          }
+        ]}
       >
         <TouchableOpacity
           onPress={onSelectImage}
-          style={tw`flex-row items-center bg-gray-50 px-5 py-3 rounded-2xl border border-gray-100`}
+          style={[
+            tw`flex-row items-center px-5 py-3 rounded-2xl border`,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border
+            }
+          ]}
         >
-          <ImageIcon size={20} color="#7FB069" />
-          <Text style={tw`text-[#7FB069] font-bold text-sm ml-2`}>Ảnh</Text>
+          <ImageIcon size={20} color={colors.primary} />
+          <Text style={[tw`font-bold text-sm ml-2`, { color: colors.primary }]}>Ảnh</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={tw`flex-row items-center bg-gray-50 px-5 py-3 rounded-2xl border border-gray-100`}
+          style={[
+            tw`flex-row items-center px-5 py-3 rounded-2xl border`,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border
+            }
+          ]}
         >
-          <Smile size={20} color="#7FB069" />
-          <Text style={tw`text-[#7FB069] font-bold text-sm ml-2`}>Cảm xúc</Text>
+          <Smile size={20} color={colors.primary} />
+          <Text style={[tw`font-bold text-sm ml-2`, { color: colors.primary }]}>Cảm xúc</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={tw`p-3 bg-gray-50 rounded-2xl border border-gray-100`}
+          style={[
+            tw`p-3 rounded-2xl border`,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border
+            }
+          ]}
         >
-          <Info size={20} color="#9CA3AF" />
+          <Info size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
       {/* Publishing Overlay */}
       {isPublishing && (
         <View
-          style={tw`absolute inset-0 bg-white/80 items-center justify-center z-50`}
+          style={[
+            tw`absolute inset-0 items-center justify-center z-50`,
+            { backgroundColor: `${colors.background}CC` }
+          ]}
         >
           <View
-            style={tw`bg-white p-8 rounded-3xl shadow-xl border border-gray-100 items-center`}
+            style={[
+              tw`p-8 rounded-3xl shadow-xl border items-center`,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border
+              }
+            ]}
           >
-            <ActivityIndicator size="large" color="#7FB069" />
-            <Text style={tw`text-brandDark font-black mt-4`}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[tw`font-black mt-4`, { color: colors.text }]}>
               Đang đăng bài...
             </Text>
-            <Text style={tw`text-gray-400 text-xs mt-1 text-center`}>
+            <Text style={[
+              tw`text-xs mt-1 text-center`,
+              { color: colors.textSecondary }
+            ]}>
               Vui lòng không tắt ứng dụng
             </Text>
           </View>
