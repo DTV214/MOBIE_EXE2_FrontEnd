@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import tw from '../../utils/tailwind';
+import { scale, fs } from '../../utils/responsive';
 
 interface Props {
   title: string;
@@ -19,13 +20,13 @@ export const StatCard = ({
 }: Props) => {
   return (
     <View
-      style={tw`bg-white p-4 rounded-3xl mb-4 flex-row items-center shadow-sm`}
+      style={[tw`bg-white rounded-3xl mb-4 flex-row items-center shadow-sm`, { padding: scale(14) }]}
     >
-      <View style={tw`${accentColor} p-4 rounded-2xl mr-4`}>{icon}</View>
-      <View>
-        <Text style={tw`text-gray-500 text-sm font-medium`}>{title}</Text>
-        <Text style={tw`text-gray-900 text-xl font-bold mt-1`}>{value}</Text>
-        <Text style={tw`text-gray-400 text-xs mt-1`}>{subtitle}</Text>
+      <View style={[tw`${accentColor} rounded-2xl`, { padding: scale(14), marginRight: scale(14) }]}>{icon}</View>
+      <View style={tw`flex-1 flex-shrink-1`}>
+        <Text style={[tw`text-gray-500 font-medium`, { fontSize: fs(13) }]}>{title}</Text>
+        <Text style={[tw`text-gray-900 font-bold mt-1`, { fontSize: fs(19) }]} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+        <Text style={[tw`text-gray-400 mt-1`, { fontSize: fs(11) }]}>{subtitle}</Text>
       </View>
     </View>
   );

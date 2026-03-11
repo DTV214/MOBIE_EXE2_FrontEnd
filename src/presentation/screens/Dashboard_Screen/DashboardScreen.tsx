@@ -6,35 +6,28 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  RefreshControl, // Thêm RefreshControl để kéo xuống load lại trang
+  RefreshControl,
   ActivityIndicator,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
+import { scale, moderateScale, verticalScale, fs } from '../../../utils/responsive';
 import {
-  Heart,
-  Utensils,
+  Footprints,
+  Zap,
   Bot,
   Hospital,
   Crown,
-  Footprints,
-  Flame,
-  Moon,
   ChevronRight,
-  Leaf,
 } from 'lucide-react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import {
   getDailyProgressUseCase,
-  getHealthInsightsUseCase,
-  getHealthTipsUseCase,
 } from '../../../di/Container';
-import { DailyProgress } from '../../../domain/entities/HealthMetric';
-import { HealthInsight } from '../../../domain/entities/HealthInsight';
-import { HealthTip } from '../../../domain/entities/HealthInsight';
 
 // 1. Import Store User để lấy thông tin
 import { useUserStore } from '../../viewmodels/useUserStore';
+import { useStepStore } from '../../viewmodels/useStepStore';
 
 // Helper function: Dynamic greeting dựa trên thời gian
 const getDynamicGreeting = () => {
@@ -52,7 +45,9 @@ interface QuickAccessCardProps {
   title: string;
   subtitle: string;
   color: string;
-  onPress: () => void;
+  onPress?: () => void;       // ← Optional
+  onLongPress?: () => void;   // ← NEW: Long press
+  disabled?: boolean;         // ← NEW: Disabled state
 }
 
 const QuickAccessCard = ({
@@ -61,17 +56,28 @@ const QuickAccessCard = ({
   subtitle,
   color,
   onPress,
+  onLongPress,
+  disabled = false,
 }: QuickAccessCardProps) => (
   <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.8}
-    style={tw`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex-1 mx-1`}
+    onPress={disabled ? undefined : onPress}
+    onLongPress={disabled ? undefined : onLongPress}
+    activeOpacity={disabled ? 1 : 0.8}
+    style={[
+      tw`bg-white rounded-2xl shadow-sm border border-gray-100 flex-1 mx-1 ${
+        disabled ? 'opacity-60' : ''
+      }`,
+      { padding: scale(14) },
+    ]}
   >
-    <View style={tw`w-12 h-12 rounded-xl items-center justify-center mb-3`}>
-      <Icon size={24} color={color} />
+    <View style={[
+      tw`rounded-xl items-center justify-center`,
+      { width: scale(44), height: scale(44), marginBottom: verticalScale(10) },
+    ]}>
+      <Icon size={moderateScale(22, 0.3)} color={color} />
     </View>
-    <Text style={tw`text-brandDark font-bold text-sm mb-1`}>{title}</Text>
-    <Text style={tw`text-textSub text-xs leading-4`}>{subtitle}</Text>
+    <Text style={[tw`text-brandDark font-bold mb-1`, { fontSize: fs(13) }]}>{title}</Text>
+    <Text style={[tw`text-textSub`, { fontSize: fs(11), lineHeight: fs(16) }]}>{subtitle}</Text>
   </TouchableOpacity>
 );
 
@@ -81,14 +87,8 @@ const DashboardScreen = () => {
 
   // 2. Lấy user và health profile từ Store
   const { user, healthProfile, fetchUserProfile } = useUserStore();
+  const { todaySteps, isInitialized, isEnabled, isAvailable, isLoading: stepLoading, error: stepError, checkAvailability, enableStepTracking, disableStepTracking, fetchTodaySteps, syncWithBackend } = useStepStore();
 
-  const [dailyProgress, setDailyProgress] = useState<DailyProgress | null>(
-    null,
-  );
-  const [healthInsight, setHealthInsight] = useState<HealthInsight | null>(
-    null,
-  );
-  const [healthTips, setHealthTips] = useState<HealthTip[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // State xử lý refresh
 
@@ -98,19 +98,15 @@ const DashboardScreen = () => {
     if (!user) {
       fetchUserProfile();
     }
-  }, [user, fetchUserProfile]);
+
+    // Check Health Connect availability (không auto enable)
+    checkAvailability();
+  }, [user, fetchUserProfile, checkAvailability]);
 
   // Hàm load dữ liệu dashboard
   const loadData = async () => {
     try {
-      const [progress, insights, tips] = await Promise.all([
-        getDailyProgressUseCase.execute(),
-        getHealthInsightsUseCase.execute(),
-        getHealthTipsUseCase.execute(3), // Giảm xuống 3 tips cho gọn
-      ]);
-      setDailyProgress(progress);
-      setHealthInsight(insights[0] || null);
-      setHealthTips(tips);
+      await getDailyProgressUseCase.execute();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -119,14 +115,57 @@ const DashboardScreen = () => {
     }
   };
 
+  // Hàm xử lý kích hoạt step tracking
+  const handleEnableStepTracking = () => {
+    Alert.alert(
+      'Kích hoạt theo dõi bước chân',
+      'Bạn có muốn kích hoạt chức năng theo dõi bước chân hàng ngày không?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Kích hoạt',
+          onPress: async () => {
+            await enableStepTracking();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  // Hàm xử lý tắt step tracking  
+  const handleDisableStepTracking = () => {
+    Alert.alert(
+      'Tắt theo dõi bước chân',
+      'Bạn có chắc chắn muốn tắt chức năng này không?',
+      [
+        {
+          text: 'Hủy', 
+          style: 'cancel',
+        },
+        {
+          text: 'Tắt',
+          style: 'destructive',
+          onPress: () => disableStepTracking(),
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   // Hàm xử lý khi kéo xuống để refresh
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     fetchUserProfile(); // Cập nhật lại thông tin user
     loadData(); // Cập nhật lại chỉ số sức khỏe
-  }, [fetchUserProfile]);
+    fetchTodaySteps(); // Cập nhật lại số bước chân
+    syncWithBackend(); // Sync với backend
+  }, [fetchUserProfile, fetchTodaySteps, syncWithBackend]);
 
-  if (loading || !dailyProgress) {
+  if (loading) {
     return (
       <View style={tw`flex-1 bg-background`}>
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -171,15 +210,18 @@ const DashboardScreen = () => {
         {/* Header với greeting */}
         <LinearGradient
           colors={['#E8F5E3', '#FFFFFF']}
-          style={tw`pt-14 pb-8 px-6`}
+          style={[
+            tw`px-6`,
+            { paddingTop: verticalScale(48), paddingBottom: verticalScale(28) },
+          ]}
         >
           <View style={tw`flex-row justify-between items-center mb-4`}>
             <View style={tw`flex-1`}>
-              <Text style={tw`text-xs text-primary font-bold mb-1`}>
+              <Text style={[tw`text-primary font-bold mb-1`, { fontSize: fs(11) }]}>
                 LÀNH CARE {greeting.emoji}
               </Text>
               {/* 3. Dynamic greeting với emoji */}
-              <Text style={tw`text-2xl font-black text-brandDark mb-1`}>
+              <Text style={[tw`font-black text-brandDark mb-1`, { fontSize: fs(22) }]}>
                 {greeting.text}, {user?.fullName?.split(' ').pop() || 'Bạn'}!
               </Text>
               <View style={tw`flex-row items-center`}>
@@ -197,17 +239,20 @@ const DashboardScreen = () => {
             {/* Avatar với tên hoặc BMI status color */}
             <TouchableOpacity
               onPress={() => navigation.navigate('Hồ sơ')}
-              style={tw`w-14 h-14 ${
-                healthProfile?.bmi 
-                  ? healthProfile.bmi < 18.5 
-                    ? 'bg-blue-500' 
-                    : healthProfile.bmi > 25 
-                    ? 'bg-orange-500' 
+              style={[
+                tw`${
+                  healthProfile?.bmi 
+                    ? healthProfile.bmi < 18.5 
+                      ? 'bg-blue-500' 
+                      : healthProfile.bmi > 25 
+                      ? 'bg-orange-500' 
+                      : 'bg-primary'
                     : 'bg-primary'
-                  : 'bg-primary'
-              } rounded-full items-center justify-center border-2 border-white shadow-md`}
+                } rounded-full items-center justify-center border-2 border-white shadow-md`,
+                { width: scale(48), height: scale(48) },
+              ]}
             >
-              <Text style={tw`text-white font-bold text-lg`}>
+              <Text style={[tw`text-white font-bold`, { fontSize: fs(16) }]}>
                 {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
               </Text>
             </TouchableOpacity>
@@ -219,18 +264,41 @@ const DashboardScreen = () => {
           <View style={tw`mb-6`}>
             <View style={tw`flex-row mb-3`}>
               <QuickAccessCard
-                icon={Heart}
-                title="Nhịp Tim"
-                subtitle="Theo dõi sức khỏe hàng ngày"
-                color="#3B82F6"
-                onPress={() => navigation.navigate('HeartRateDetail')}
+                icon={Footprints}
+                title="Bước chân"
+                subtitle={
+                  !isAvailable 
+                    ? "Thiết bị không hỗ trợ"
+                    : !isEnabled
+                    ? "Chạm để kích hoạt"  
+                    : stepError 
+                    ? stepError  
+                    : stepLoading
+                    ? "Đang tải..."
+                    : `${todaySteps.toLocaleString()} bước hôm nay`
+                }
+                color={
+                  !isAvailable || stepError ? "#9CA3AF"     // Gray cho error/not available
+                    : !isEnabled ? "#F97316"                // Orange cho chưa kích hoạt  
+                    : stepLoading ? "#6B7280"               // Gray cho loading
+                    : "#3B82F6"                             // Blue cho normal
+                }  
+                onPress={
+                  !isAvailable ? undefined
+                    : !isEnabled ? handleEnableStepTracking
+                    : () => navigation.navigate('HealthSummary')
+                }
+                onLongPress={
+                  isEnabled ? handleDisableStepTracking : undefined
+                }
+                disabled={!isAvailable}
               />
               <QuickAccessCard
-                icon={Utensils}
-                title="Theo dõi Thức Ăn"
-                subtitle="Ghi lại các bữa ăn hôm nay"
+                icon={Zap}
+                title="Theo dõi năng lượng"
+                subtitle="Ghi nhận năng lượng hôm nay"
                 color="#F97316"
-                onPress={() => navigation.navigate('Bữa ăn')} // Điều hướng qua Tab Bữa ăn
+                onPress={() => navigation.navigate('Nhật ký')}
               />
             </View>
             <View style={tw`flex-row`}>
@@ -253,170 +321,30 @@ const DashboardScreen = () => {
 
           {/* Membership Section */}
           <TouchableOpacity
-            style={tw`bg-white rounded-2xl p-4 flex-row items-center justify-between mb-6 shadow-sm border border-gray-100`}
+            style={[tw`bg-white rounded-2xl flex-row items-center justify-between mb-6 shadow-sm border border-gray-100`, { padding: scale(14) }]}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('ChoosePlan')}
           >
             <View style={tw`flex-row items-center flex-1`}>
               <View
-                style={tw`w-12 h-12 bg-yellow-100 rounded-xl items-center justify-center mr-4`}
+                style={[
+                  tw`bg-yellow-100 rounded-xl items-center justify-center`,
+                  { width: scale(44), height: scale(44), marginRight: scale(14) },
+                ]}
               >
-                <Crown size={24} color="#F59E0B" />
+                <Crown size={moderateScale(22, 0.3)} color="#F59E0B" />
               </View>
               <View style={tw`flex-1`}>
-                <Text style={tw`text-brandDark font-bold text-base mb-1`}>
+                <Text style={[tw`text-brandDark font-bold mb-1`, { fontSize: fs(15) }]}>
                   Gói Membership
                 </Text>
-                <Text style={tw`text-textSub text-xs`}>
+                <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>
                   Quản lý và nâng cấp tài khoản của bạn
                 </Text>
               </View>
             </View>
-            <ChevronRight size={20} color="#9CA3AF" />
+            <ChevronRight size={moderateScale(18, 0.3)} color="#9CA3AF" />
           </TouchableOpacity>
-
-          {/* Daily Progress Summary */}
-          <View
-            style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}
-          >
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
-              Quá trình hôm nay
-            </Text>
-
-            {/* Steps */}
-            <View style={tw`flex-row items-center mb-4`}>
-              <View
-                style={tw`w-10 h-10 bg-blue-50 rounded-xl items-center justify-center mr-3`}
-              >
-                <Footprints size={20} color="#3B82F6" />
-              </View>
-              <Text style={tw`text-brandDark font-semibold flex-1`}>
-                {dailyProgress.steps.value.toLocaleString()} bước
-              </Text>
-            </View>
-
-            {/* Calories */}
-            <View style={tw`flex-row items-center mb-4`}>
-              <View
-                style={tw`w-10 h-10 bg-orange-50 rounded-xl items-center justify-center mr-3`}
-              >
-                <Flame size={20} color="#F97316" />
-              </View>
-              <Text style={tw`text-brandDark font-semibold flex-1`}>
-                {dailyProgress.calories.value.toLocaleString()} calo đã đốt
-              </Text>
-            </View>
-
-            {/* Sleep */}
-            <View style={tw`flex-row items-center mb-4`}>
-              <View
-                style={tw`w-10 h-10 bg-purple-50 rounded-xl items-center justify-center mr-3`}
-              >
-                <Moon size={20} color="#8B5CF6" />
-              </View>
-              <Text style={tw`text-brandDark font-semibold flex-1`}>
-                {dailyProgress.sleep.value.toFixed(1)}h ngủ
-              </Text>
-            </View>
-
-            {/* View Full Dashboard Button */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate('HealthSummary')}
-              activeOpacity={0.9}
-            >
-              <LinearGradient
-                colors={['#7FB069', '#6A9A5A']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={tw`h-12 rounded-xl flex-row items-center justify-center mt-2`}
-              >
-                <Text style={tw`text-white font-bold text-sm mr-2`}>
-                  Xem chi tiết sức khỏe
-                </Text>
-                <ChevronRight size={16} color="white" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-
-          {/* AI Health Tip */}
-          {healthInsight && (
-            <View
-              style={tw`bg-primaryLight rounded-2xl p-5 mb-6 border border-primaryLight/50`}
-            >
-              <View style={tw`flex-row items-start`}>
-                <View
-                  style={tw`w-10 h-10 bg-primary rounded-xl items-center justify-center mr-4`}
-                >
-                  <Leaf size={20} color="#FFFFFF" />
-                </View>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-brandDark font-bold text-base mb-2`}>
-                    {healthInsight.title}
-                  </Text>
-                  <Text style={tw`text-textSub text-sm leading-5`}>
-                    {healthInsight.description}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Health Care Tips */}
-          <View
-            style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}
-          >
-            <View style={tw`flex-row justify-between items-center mb-4`}>
-              <Text style={tw`text-brandDark font-bold text-lg`}>
-                Mẹo chăm sóc sức khỏe
-              </Text>
-              <TouchableOpacity>
-                <Text style={tw`text-primary font-semibold text-sm`}>
-                  Xem thêm
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {healthTips.map((tip, index) => (
-              <TouchableOpacity
-                key={tip.id}
-                style={tw`flex-row items-start mb-4 ${
-                  index === healthTips.length - 1 ? 'mb-0' : ''
-                }`}
-                activeOpacity={0.8}
-              >
-                <View
-                  style={tw`w-12 h-12 rounded-xl items-center justify-center mr-4 ${
-                    tip.category === 'nutrition'
-                      ? 'bg-orange-50'
-                      : tip.category === 'sleep'
-                      ? 'bg-purple-50'
-                      : 'bg-blue-50'
-                  }`}
-                >
-                  {tip.category === 'nutrition' ? (
-                    <Utensils size={20} color="#F97316" />
-                  ) : tip.category === 'sleep' ? (
-                    <Moon size={20} color="#8B5CF6" />
-                  ) : (
-                    <Footprints size={20} color="#3B82F6" />
-                  )}
-                </View>
-                <View style={tw`flex-1`}>
-                  <Text style={tw`text-brandDark font-semibold text-sm mb-1`}>
-                    {tip.title}
-                  </Text>
-                  <View style={tw`flex-row items-center`}>
-                    {tip.calories && (
-                      <Text style={tw`text-textSub text-xs mr-3`}>
-                        {tip.calories}
-                      </Text>
-                    )}
-                    <Text style={tw`text-textSub text-xs`}>{tip.readTime}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
 
           {/* Bottom spacing */}
           <View style={tw`h-6`} />

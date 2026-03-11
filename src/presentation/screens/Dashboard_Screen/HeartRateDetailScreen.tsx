@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
+import { scale, moderateScale, verticalScale, fs, getScreenWidth } from '../../../utils/responsive';
 import {
   ChevronLeft,
   MoreVertical,
@@ -31,14 +32,16 @@ interface PeriodButtonProps {
 const PeriodButton = ({ period, label, selectedPeriod, onPress }: PeriodButtonProps) => (
   <TouchableOpacity
     onPress={() => onPress(period)}
-    style={tw`px-4 py-2 rounded-xl ${
-      selectedPeriod === period ? 'bg-primary' : 'bg-gray-100'
-    }`}
+    style={[
+      tw`rounded-xl ${selectedPeriod === period ? 'bg-primary' : 'bg-gray-100'}`,
+      { paddingHorizontal: scale(14), paddingVertical: verticalScale(8) },
+    ]}
   >
     <Text
-      style={tw`font-semibold text-sm ${
-        selectedPeriod === period ? 'text-white' : 'text-textSub'
-      }`}
+      style={[
+        tw`font-semibold ${selectedPeriod === period ? 'text-white' : 'text-textSub'}`,
+        { fontSize: fs(13) },
+      ]}
     >
       {label}
     </Text>
@@ -87,18 +90,18 @@ const HeartRateDetailScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       {/* Header */}
-      <View style={tw`bg-white pt-14 pb-4 px-6 flex-row items-center justify-between border-b border-gray-100`}>
+      <View style={[tw`bg-white px-6 flex-row items-center justify-between border-b border-gray-100`, { paddingTop: verticalScale(48), paddingBottom: verticalScale(14) }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={tw`p-2`}
         >
-          <ChevronLeft size={24} color="#1F2937" />
+          <ChevronLeft size={moderateScale(22, 0.3)} color="#1F2937" />
         </TouchableOpacity>
-        <Text style={tw`text-lg font-bold text-brandDark`}>
+        <Text style={[tw`font-bold text-brandDark`, { fontSize: fs(17) }]}>
           Xu hướng nhịp tim
         </Text>
         <TouchableOpacity style={tw`p-2`}>
-          <MoreVertical size={20} color="#1F2937" />
+          <MoreVertical size={moderateScale(18, 0.3)} color="#1F2937" />
         </TouchableOpacity>
       </View>
 
@@ -114,12 +117,12 @@ const HeartRateDetailScreen = () => {
           </View>
 
           {/* Chart Card */}
-          <View style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}>
+          <View style={[tw`bg-white rounded-2xl mb-6 shadow-sm border border-gray-100`, { padding: scale(18) }]}>
             <LineChart
               data={chartData}
-              height={200}
-              spacing={trend.dataPoints.length > 7 ? 30 : 45}
-              initialSpacing={10}
+              height={verticalScale(200)}
+              spacing={trend.dataPoints.length > 7 ? scale(30) : scale(45)}
+              initialSpacing={scale(10)}
               color="#7FB069"
               thickness={3}
               startFillColor="rgba(127, 176, 105, 0.3)"
@@ -131,56 +134,56 @@ const HeartRateDetailScreen = () => {
               xAxisThickness={0}
               hideDataPoints={false}
               dataPointsColor="#7FB069"
-              dataPointsRadius={4}
+              dataPointsRadius={moderateScale(4, 0.3)}
               rulesType="dashed"
               rulesColor="#E5E7EB"
-              yAxisTextStyle={tw`text-gray-400 text-[10px]`}
-              xAxisLabelTextStyle={tw`text-gray-400 text-[10px]`}
-              yAxisLabelWidth={40}
+              yAxisTextStyle={{ color: '#9CA3AF', fontSize: fs(10) }}
+              xAxisLabelTextStyle={{ color: '#9CA3AF', fontSize: fs(10) }}
+              yAxisLabelWidth={scale(40)}
               maxValue={100}
               minValue={40}
             />
           </View>
 
           {/* Current Statistics */}
-          <View style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
+          <View style={[tw`bg-white rounded-2xl mb-6 shadow-sm border border-gray-100`, { padding: scale(18) }]}>
+            <Text style={[tw`text-brandDark font-bold mb-4`, { fontSize: fs(17) }]}>
               Thống kê hiện tại
             </Text>
             <View style={tw`flex-row justify-between`}>
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-2xl font-bold text-primary mb-1`}>
+                <Text style={[tw`font-bold text-primary mb-1`, { fontSize: fs(22) }]}>
                   {trend.statistics.average}
                 </Text>
-                <Text style={tw`text-textSub text-xs`}>AVG BPM</Text>
+                <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>AVG BPM</Text>
               </View>
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-2xl font-bold text-red-500 mb-1`}>
+                <Text style={[tw`font-bold text-red-500 mb-1`, { fontSize: fs(22) }]}>
                   {trend.statistics.maximum}
                 </Text>
-                <Text style={tw`text-textSub text-xs`}>MAX BPM</Text>
+                <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>MAX BPM</Text>
               </View>
               <View style={tw`items-center flex-1`}>
-                <Text style={tw`text-2xl font-bold text-primary mb-1`}>
+                <Text style={[tw`font-bold text-primary mb-1`, { fontSize: fs(22) }]}>
                   {trend.statistics.minimum}
                 </Text>
-                <Text style={tw`text-textSub text-xs`}>MIN BPM</Text>
+                <Text style={[tw`text-textSub`, { fontSize: fs(11) }]}>MIN BPM</Text>
               </View>
             </View>
           </View>
 
           {/* AI Insight */}
           {trend.aiInsight && (
-            <View style={tw`bg-primaryLight rounded-2xl p-5 mb-6 border border-primaryLight/50`}>
+            <View style={[tw`bg-primaryLight rounded-2xl mb-6 border border-primaryLight/50`, { padding: scale(18) }]}>
               <View style={tw`flex-row items-start`}>
-                <View style={tw`w-10 h-10 bg-primary rounded-xl items-center justify-center mr-4`}>
-                  <Leaf size={20} color="#FFFFFF" />
+                <View style={[tw`bg-primary rounded-xl items-center justify-center`, { width: scale(38), height: scale(38), marginRight: scale(14) }]}>
+                  <Leaf size={moderateScale(18, 0.3)} color="#FFFFFF" />
                 </View>
                 <View style={tw`flex-1`}>
-                  <Text style={tw`text-brandDark font-bold text-base mb-2`}>
+                  <Text style={[tw`text-brandDark font-bold mb-2`, { fontSize: fs(15) }]}>
                     AI Insight
                   </Text>
-                  <Text style={tw`text-textSub text-sm leading-5`}>
+                  <Text style={[tw`text-textSub`, { fontSize: fs(13), lineHeight: fs(20) }]}>
                     {trend.aiInsight}
                   </Text>
                 </View>
@@ -189,13 +192,13 @@ const HeartRateDetailScreen = () => {
           )}
 
           {/* Normal Range Comparison */}
-          <View style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}>
-            <Text style={tw`text-brandDark font-bold text-lg mb-4`}>
+          <View style={[tw`bg-white rounded-2xl mb-6 shadow-sm border border-gray-100`, { padding: scale(18) }]}>
+            <Text style={[tw`text-brandDark font-bold mb-4`, { fontSize: fs(17) }]}>
               So sánh phạm vi bình thường
             </Text>
             <View style={tw`mb-3`}>
-              <Text style={tw`text-textSub text-sm mb-2`}>Trung bình của bạn</Text>
-              <Text style={tw`text-2xl font-bold text-brandDark mb-4`}>
+              <Text style={[tw`text-textSub mb-2`, { fontSize: fs(13) }]}>Trung bình của bạn</Text>
+              <Text style={[tw`font-bold text-brandDark mb-4`, { fontSize: fs(22) }]}>
                 {trend.statistics.average} bpm
               </Text>
             </View>
@@ -222,8 +225,8 @@ const HeartRateDetailScreen = () => {
             </View>
 
             <View style={tw`flex-row items-center`}>
-              <CheckCircle size={16} color="#7FB069" />
-              <Text style={tw`text-primary font-semibold text-sm ml-2`}>
+              <CheckCircle size={moderateScale(14, 0.3)} color="#7FB069" />
+              <Text style={[tw`text-primary font-semibold ml-2`, { fontSize: fs(13) }]}>
                 Within Normal Range
               </Text>
             </View>
@@ -231,22 +234,22 @@ const HeartRateDetailScreen = () => {
 
           {/* Weekly Summary */}
           {trend.weeklySummary && (
-            <View style={tw`bg-white rounded-2xl p-5 mb-6 shadow-sm border border-gray-100`}>
-              <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+            <View style={[tw`bg-white rounded-2xl mb-6 shadow-sm border border-gray-100`, { padding: scale(18) }]}>
+              <Text style={[tw`text-brandDark font-bold mb-3`, { fontSize: fs(17) }]}>
                 Tóm tắt hàng tuần
               </Text>
               <View style={tw`flex-row justify-between`}>
                 <View>
-                  <Text style={tw`text-2xl font-bold text-brandDark mb-1`}>
+                  <Text style={[tw`font-bold text-brandDark mb-1`, { fontSize: fs(22) }]}>
                     {trend.weeklySummary.activeDays}
                   </Text>
-                  <Text style={tw`text-textSub text-sm`}>Ngày hoạt động</Text>
+                  <Text style={[tw`text-textSub`, { fontSize: fs(13) }]}>Ngày hoạt động</Text>
                 </View>
                 <View>
-                  <Text style={tw`text-2xl font-bold text-brandDark mb-1`}>
+                  <Text style={[tw`font-bold text-brandDark mb-1`, { fontSize: fs(22) }]}>
                     {trend.weeklySummary.averageHoursPerDay}
                   </Text>
-                  <Text style={tw`text-textSub text-sm`}>Số giờ trung bình 1 ngày</Text>
+                  <Text style={[tw`text-textSub`, { fontSize: fs(13) }]}>Số giờ trung bình 1 ngày</Text>
                 </View>
               </View>
             </View>
@@ -262,12 +265,12 @@ const HeartRateDetailScreen = () => {
               colors={['#7FB069', '#6A9A5A']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={tw`h-16 rounded-2xl flex-row items-center justify-center shadow-lg`}
+              style={[tw`rounded-2xl flex-row items-center justify-center shadow-lg`, { height: verticalScale(56) }]}
             >
-              <View style={tw`w-8 h-8 bg-white/20 rounded-full items-center justify-center mr-3`}>
-                <Leaf size={16} color="#FFFFFF" />
+              <View style={[tw`bg-white/20 rounded-full items-center justify-center mr-3`, { width: scale(30), height: scale(30) }]}>
+                <Leaf size={moderateScale(14, 0.3)} color="#FFFFFF" />
               </View>
-              <Text style={tw`text-white font-bold text-lg`}>
+              <Text style={[tw`text-white font-bold`, { fontSize: fs(16) }]}>
                 Nhận lời khuyên AI
               </Text>
             </LinearGradient>

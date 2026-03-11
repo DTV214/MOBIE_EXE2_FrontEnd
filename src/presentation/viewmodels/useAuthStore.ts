@@ -32,7 +32,17 @@ export const useAuthStore = create<AuthState>(set => ({
       console.log('--- [STEP 2] KHỞI ĐỘNG TIẾN TRÌNH GOOGLE SDK ---');
 
       // Kiểm tra Play Services
-      await GoogleSignin.hasPlayServices();
+       try {
+        await GoogleSignin.hasPlayServices();
+        console.log('✅ Google Play Services available');
+      } catch (playServicesError: any) {
+        console.error('❌ GOOGLE PLAY SERVICES ERROR:', playServicesError);
+        set({ 
+          loading: false, 
+          error: 'Google Play Services không khả dụng. Vui lòng cập nhật Google Play Services trên thiết bị.' 
+        });
+        return false;
+      }
 
       // Thực hiện Sign In
       const response = await GoogleSignin.signIn();
@@ -131,12 +141,7 @@ export const useAuthStore = create<AuthState>(set => ({
       await GoogleSignin.signOut();
       console.log('1. Đã Sign Out Google SDK');
 
-      // 2. Xóa Token trong bộ nhớ máy (AsyncStorage) qua Repository
-      const { authRepository } = await import('../../di/Container');
-      await authRepository.logout();
-      console.log('2. Đã xóa Access Token trong AsyncStorage');
-
-      // 3. Reset trạng thái Store
+      // 2. Reset trạng thái Store TRƯỚC khi xóa token để tránh race condition
       set({
         user: null,
         token: null,
@@ -144,12 +149,23 @@ export const useAuthStore = create<AuthState>(set => ({
         error: null,
       });
 
+      // 3. Xóa Token trong bộ nhớ máy (AsyncStorage) qua Repository
+      const { authRepository } = await import('../../di/Container');
+      await authRepository.logout();
+      console.log('2. Đã xóa Access Token trong AsyncStorage');
+
       console.log('--- [LOGOUT] ĐÃ ĐĂNG XUẤT HOÀN TOÀN KHỎI HỆ THỐNG ---');
     } catch (error: any) {
-      console.error(
-        '--- [ERROR] LỖI TRONG QUÁ TRÌNH ĐĂNG XUẤT ---',
-        error.message,
-      );
+      // Chỉ log nghiêm trọng nếu logout thất bại hoàn toàn
+      console.warn('--- [LOGOUT WARNING] Một vài cleanup steps gặp lỗi nhưng đã đăng xuất ---', error.message);
+      
+      // Vẫn reset state để đảm bảo user được đăng xuất
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        error: null,
+      });
     }
   },
 }));

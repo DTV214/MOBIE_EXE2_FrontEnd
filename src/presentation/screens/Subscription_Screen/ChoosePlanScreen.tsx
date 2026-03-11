@@ -7,44 +7,70 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
-import { ChevronLeft, Check } from 'lucide-react-native';
+import { ChevronLeft, Check, Crown } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { getAllPlansUseCase } from '../../../di/Container';
-import { SubscriptionPlan } from '../../../domain/entities/Subscription';
+import { subscriptionRepository } from '../../../di/Container';
+import { ServicePlan } from '../../../domain/entities/Subscription';
 import LinearGradient from 'react-native-linear-gradient';
 
 const ChoosePlanScreen = () => {
   const navigation = useNavigation<any>();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [plans, setPlans] = useState<ServicePlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPlanId, setCurrentPlanId] = useState<number | null>(null);
 
   useEffect(() => {
     loadPlans();
+    loadCurrentSubscription();
   }, []);
+
+  const loadCurrentSubscription = async () => {
+    try {
+      const sub = await subscriptionRepository.getMySubscription();
+      if (sub && sub.status === 'ACTIVE') {
+        setCurrentPlanId(sub.servicePlanId);
+      }
+    } catch (error) {
+      console.log('No active subscription found');
+    }
+  };
 
   const loadPlans = async () => {
     try {
-      const data = await getAllPlansUseCase.execute();
-      setPlans(data);
-      // Auto-select premium plan if available
-      const premiumPlan = data.find(p => p.isPopular);
-      if (premiumPlan) {
-        setSelectedPlanId(premiumPlan.id);
+      const data = await subscriptionRepository.getAllPlans();
+      console.log('Plans API response:', JSON.stringify(data));
+      const plansList = Array.isArray(data) ? data : [];
+      setPlans(plansList);
+      // Auto-select first plan
+      if (plansList.length > 0) {
+        setSelectedPlanId(plansList[0].id);
       }
     } catch (error) {
       console.error('Error loading plans:', error);
+      setPlans([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleContinue = () => {
-    if (selectedPlanId) {
-      navigation.navigate('PaymentMethod', { planId: selectedPlanId });
+    const selectedPlan = plans.find(p => p.id === selectedPlanId);
+    if (!selectedPlan) return;
+
+    if (selectedPlan.id === currentPlanId) {
+      Alert.alert(
+        '😊 Bạn đang dùng gói này',
+        `Bạn đang sử dụng gói "${selectedPlan.name}" rồi. Hãy chọn gói khác để nâng cấp trải nghiệm nhé!`,
+        [{ text: 'Đã hiểu', style: 'default' }]
+      );
+      return;
     }
+
+    navigation.navigate('ConfirmPayment', { plan: selectedPlan });
   };
 
   if (loading) {
@@ -78,28 +104,25 @@ const ChoosePlanScreen = () => {
         <View style={tw`flex-row justify-between items-center`}>
           {[
             { label: 'Chọn gói', step: 1 },
-            { label: 'Thanh toán', step: 2 },
-            { label: 'Xác nhận', step: 3 },
+            { label: 'Xác nhận', step: 2 },
+            { label: 'Thanh toán', step: 3 },
             { label: 'Thành công', step: 4 },
           ].map((item, index) => (
             <View key={index} style={tw`flex-1 items-center`}>
               <View
-                style={tw`w-8 h-8 rounded-full items-center justify-center ${
-                  item.step === 1 ? 'bg-primary' : 'bg-gray-200'
-                }`}
+                style={tw`w-8 h-8 rounded-full items-center justify-center ${item.step === 1 ? 'bg-primary' : 'bg-gray-200'
+                  }`}
               >
                 <Text
-                  style={tw`font-bold text-xs ${
-                    item.step === 1 ? 'text-white' : 'text-textSub'
-                  }`}
+                  style={tw`font-bold text-xs ${item.step === 1 ? 'text-white' : 'text-textSub'
+                    }`}
                 >
                   {item.step}
                 </Text>
               </View>
               <Text
-                style={tw`text-[10px] mt-1 ${
-                  item.step === 1 ? 'text-primary font-semibold' : 'text-textSub'
-                }`}
+                style={tw`text-[10px] mt-1 ${item.step === 1 ? 'text-primary font-semibold' : 'text-textSub'
+                  }`}
               >
                 {item.label}
               </Text>
@@ -111,11 +134,12 @@ const ChoosePlanScreen = () => {
       {/* Plans List */}
       <ScrollView showsVerticalScrollIndicator={false} style={tw`flex-1`}>
         <View style={tw`px-6 py-6`}>
-          {plans.map((plan) => (
+          {(plans || []).map((plan) => (
             <PlanCard
               key={plan.id}
               plan={plan}
               isSelected={selectedPlanId === plan.id}
+              isCurrentPlan={plan.id === currentPlanId}
               onSelect={() => setSelectedPlanId(plan.id)}
             />
           ))}
@@ -133,9 +157,8 @@ const ChoosePlanScreen = () => {
             colors={['#7FB069', '#6A9A5A']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={tw`py-4 rounded-2xl items-center ${
-              !selectedPlanId ? 'opacity-50' : ''
-            }`}
+            style={tw`py-4 rounded-2xl items-center ${!selectedPlanId ? 'opacity-50' : ''
+              }`}
           >
             <Text style={tw`text-white font-bold text-base`}>
               Đi tới thanh toán
@@ -148,32 +171,67 @@ const ChoosePlanScreen = () => {
 };
 
 interface PlanCardProps {
-  plan: SubscriptionPlan;
+  plan: ServicePlan;
   isSelected: boolean;
+  isCurrentPlan: boolean;
   onSelect: () => void;
 }
 
-const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
+const FEATURE_LABELS: Record<string, string> = {
+  'DAILY_LOG': 'Nhật ký sức khỏe hàng ngày',
+  'DAILY_LOG_LIMITED': 'Nhật ký sức khỏe (giới hạn)',
+  'MEAL_LOG': 'Theo dõi bữa ăn',
+  'EXERCISE_LOG': 'Theo dõi tập luyện',
+  'FORUM_POST': 'Đăng bài trên diễn đàn',
+  'FORUM_VIEW': 'Xem diễn đàn',
+  'AI_CHAT_LIMITED': 'AI Chat (10 lượt/ngày)',
+  'AI_CHAT_UNLIMITED': 'AI Chat không giới hạn',
+  'HOSPITAL_SEARCH': 'Tìm kiếm bệnh viện',
+  'HEALTH_REPORT_WEEKLY': 'Báo cáo sức khỏe hàng tuần',
+  'HEALTH_REPORT_FULL': 'Báo cáo sức khỏe chi tiết',
+  'DASHBOARD_PRO': 'Dashboard nâng cao',
+  'EXPORT_PDF': 'Xuất báo cáo PDF',
+};
+
+const getFeatureLabel = (code: string): string => {
+  return FEATURE_LABELS[code.trim()] || code;
+};
+
+const PlanCard = ({ plan, isSelected, isCurrentPlan, onSelect }: PlanCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
 
-  const getDurationText = (duration: number) => {
-    if (duration === 1) return 'tháng';
-    return `${duration} tháng`;
+  const getPeriodText = (value: number, unit: string) => {
+    if (unit === 'MONTH') return value === 1 ? 'tháng' : `${value} tháng`;
+    return `${value} năm`;
   };
+
+  const isPremium = plan.name.toLowerCase().includes('cao cấp');
 
   return (
     <TouchableOpacity
       onPress={onSelect}
-      style={tw`mb-4 rounded-2xl overflow-hidden ${
-        isSelected ? 'border-2 border-primary' : 'border border-gray-200'
-      }`}
+      style={tw`mb-4 rounded-2xl overflow-hidden ${isCurrentPlan
+        ? 'border-2 border-amber-400'
+        : isSelected
+          ? 'border-2 border-primary'
+          : 'border border-gray-200'
+        }`}
     >
-      {plan.isPopular && (
+      {/* Current Plan Badge */}
+      {isCurrentPlan && (
+        <View style={tw`bg-amber-400 px-4 py-2 flex-row items-center justify-center`}>
+          <Crown size={14} color="#FFFFFF" />
+          <Text style={tw`text-white font-bold text-xs ml-1`}>
+            Gói hiện tại của bạn
+          </Text>
+        </View>
+      )}
+      {!isCurrentPlan && isPremium && plan.periodValue >= 6 && (
         <View style={tw`bg-primary px-4 py-2 items-center`}>
           <Text style={tw`text-white font-bold text-xs`}>
-            Tiết kiệm {plan.discount}%
+            Tiết kiệm 16%
           </Text>
         </View>
       )}
@@ -181,25 +239,22 @@ const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
         <View style={tw`flex-row justify-between items-start mb-4`}>
           <View style={tw`flex-1`}>
             <Text style={tw`text-brandDark font-bold text-xl mb-1`}>
-              {plan.nameVietnamese}
+              {plan.name}
             </Text>
             <Text style={tw`text-textSub text-sm`}>
-              {formatPrice(plan.price)} VND / {getDurationText(plan.duration)}
+              {formatPrice(plan.price)} VND / {getPeriodText(plan.periodValue, plan.periodUnit)}
             </Text>
-            {plan.originalPrice && plan.discount && (
-              <Text style={tw`text-textSub text-xs line-through mt-1`}>
-                {formatPrice(plan.originalPrice)} VND
-              </Text>
-            )}
           </View>
           <View
-            style={tw`w-6 h-6 rounded-full border-2 items-center justify-center ${
-              isSelected ? 'border-primary bg-primary' : 'border-gray-300'
-            }`}
+            style={tw`w-6 h-6 rounded-full border-2 items-center justify-center ${isSelected ? 'border-primary bg-primary' : 'border-gray-300'
+              }`}
           >
             {isSelected && <Check size={16} color="#FFFFFF" />}
           </View>
         </View>
+
+        {/* Description */}
+        <Text style={tw`text-textSub text-xs mb-3`}>{plan.description}</Text>
 
         {/* Features */}
         <View style={tw`border-t border-gray-100 pt-4`}>
@@ -207,7 +262,7 @@ const PlanCard = ({ plan, isSelected, onSelect }: PlanCardProps) => {
             <View key={index} style={tw`flex-row items-center mb-2`}>
               <Check size={16} color="#7FB069" />
               <Text style={tw`text-brandDark text-sm ml-2 flex-1`}>
-                {feature}
+                {getFeatureLabel(feature)}
               </Text>
             </View>
           ))}

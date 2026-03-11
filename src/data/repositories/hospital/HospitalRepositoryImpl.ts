@@ -91,7 +91,7 @@ export class HospitalRepositoryImpl implements IHospitalNewRepository {
       distance: undefined,
       imageUrl: undefined,
       description: undefined,
-      specialties: undefined,
+      specialties: (dto as any).specialties || undefined,
     };
   }
 

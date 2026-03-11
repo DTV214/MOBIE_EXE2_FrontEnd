@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Linking,
+  Platform,
 } from 'react-native';
 import tw from '../../../utils/tailwind';
 import {
@@ -57,7 +58,11 @@ const HospitalDetailScreen = () => {
 
   const handleDirections = () => {
     if (hospital?.latitude && hospital?.longitude) {
-      const url = `https://maps.google.com/?daddr=${hospital.latitude},${hospital.longitude}`;
+      const url = Platform.select({
+        android: `google.navigation:q=${hospital.latitude},${hospital.longitude}`,
+        ios: `maps://app?daddr=${hospital.latitude},${hospital.longitude}`,
+        default: `https://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude}`,
+      });
       Linking.openURL(url);
     }
   };
@@ -155,27 +160,29 @@ const HospitalDetailScreen = () => {
           </Text>
           <Text style={tw`text-textSub leading-6`}>
             Bệnh viện {hospital.name} là một cơ sở y tế chất lượng cao với {hospital.specialtyCount} chuyên khoa khác nhau.
-            Địa chỉ: {hospital.address}
           </Text>
         </View>
 
-        {/* Contact Info */}
-        <View style={tw`bg-gray-50 rounded-2xl p-4 mb-6`}>
-          <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
-            Thông tin liên hệ
-          </Text>
-          {hospital.phone && (
-            <TouchableOpacity
-              onPress={handleCall}
-              style={tw`flex-row items-center`}
-            >
-              <Phone size={18} color="#7FB069" />
-              <Text style={tw`text-primary font-semibold text-base ml-3`}>
-                {hospital.phone}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Specialties List */}
+        {hospital.specialties && hospital.specialties.length > 0 && (
+          <View style={tw`mb-6`}>
+            <Text style={tw`text-brandDark font-bold text-lg mb-3`}>
+              Chuyên khoa
+            </Text>
+            <View style={tw`flex-row flex-wrap`}>
+              {hospital.specialties.map(spec => (
+                <View
+                  key={spec.id}
+                  style={tw`bg-green-50 px-3 py-2 rounded-xl mr-2 mb-2 border border-green-100`}
+                >
+                  <Text style={tw`text-green-700 font-semibold text-xs`}>
+                    {spec.nameVn}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Bottom spacing */}
         <View style={tw`h-6`} />
@@ -193,24 +200,17 @@ const HospitalDetailScreen = () => {
         )}
         <TouchableOpacity
           onPress={handleDirections}
-          style={tw`flex-1 bg-gray-100 p-4 rounded-2xl mr-3 flex-row items-center justify-center`}
-        >
-          <Navigation size={20} color="#7FB069" />
-          <Text style={tw`text-primary font-bold text-base ml-2`}>Chỉ đường</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={tw`flex-1`}
           activeOpacity={0.9}
+          style={tw`flex-1`}
         >
           <LinearGradient
             colors={['#7FB069', '#6A9A5A']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={tw`p-4 rounded-2xl items-center justify-center`}
+            style={tw`p-4 rounded-2xl flex-row items-center justify-center`}
           >
-            <Text style={tw`text-white font-bold text-base`}>
-              Đặt lịch hẹn
-            </Text>
+            <Navigation size={20} color="#FFFFFF" />
+            <Text style={tw`text-white font-bold text-base ml-2`}>Chỉ đường</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
