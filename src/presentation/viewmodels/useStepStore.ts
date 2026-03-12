@@ -1,14 +1,14 @@
 // src/presentation/viewmodels/useStepStore.ts
 import { create } from 'zustand';
-import { healthConnectService } from '../../services/HealthConnectService';
+import { stepCounterService } from '../../services/HealthConnectService';
 
 interface StepState {
   // State
   todaySteps: number;
   isLoading: boolean;
   isInitialized: boolean;
-  isEnabled: boolean;  // ← NEW: Manual enable/disable
-  isAvailable: boolean; // ← NEW: Health Connect availability
+  isEnabled: boolean;
+  isAvailable: boolean;
   lastSyncTime: Date | null;
   error: string | null;
 
@@ -27,25 +27,25 @@ export const useStepStore = create<StepState>((set, get) => ({
   todaySteps: 0,
   isLoading: false,
   isInitialized: false,
-  isEnabled: false,     // ← NEW: Default disabled
-  isAvailable: false,   // ← NEW: Health Connect availability
+  isEnabled: false,
+  isAvailable: false,
   lastSyncTime: null,
   error: null,
 
   /**
-   * Check Health Connect availability (không auto enable)
+   * Check step sensor availability
    */
   checkAvailability: async () => {
     try {
-      console.log('🔍 Checking Health Connect availability...');
-      const isAvailable = await healthConnectService.isAvailable();
+      console.log('Checking Android step sensor availability...');
+      const isAvailable = await stepCounterService.isAvailable();
       set({ isAvailable });
       
       if (!isAvailable) {
-        console.log('⚠️ Health Connect not available on this device');
+        console.log('Step counter sensor not available on this device');
         set({ error: 'Thiết bị không hỗ trợ theo dõi bước chân' });
       } else {
-        console.log('✅ Health Connect available');
+        console.log('Step counter sensor available');
         set({ error: null });
       }
     } catch (error: any) {
@@ -75,8 +75,7 @@ export const useStepStore = create<StepState>((set, get) => ({
         }
       }
 
-      // Initialize Health Connect
-      const success = await healthConnectService.initialize();
+      const success = await stepCounterService.initialize();
       if (!success) {
         console.warn('⚠️ Health tracking permission denied');
         set({ 
@@ -88,10 +87,9 @@ export const useStepStore = create<StepState>((set, get) => ({
       }
 
       // Get initial step count
-      const steps = await healthConnectService.getTodaySteps();
+      const steps = await stepCounterService.getTodaySteps();
       
-      // Start periodic sync  
-      healthConnectService.startPeriodicSync();
+      stepCounterService.startPeriodicSync();
 
       set({
         isEnabled: true,
@@ -135,8 +133,7 @@ export const useStepStore = create<StepState>((set, get) => ({
     try {
       console.log('🚀 Initializing step tracking...');
       
-      // Check if Google Fit is available
-      const isAvailable = await healthConnectService.isAvailable();
+      const isAvailable = await stepCounterService.isAvailable();
       if (!isAvailable) {
         console.warn('⚠️ Health tracking not available on this device');
         set({ 
@@ -148,8 +145,7 @@ export const useStepStore = create<StepState>((set, get) => ({
         return;
       }
 
-      // Initialize Google Fit
-      const success = await healthConnectService.initialize();
+      const success = await stepCounterService.initialize();
       if (!success) {
         console.warn('⚠️ Health tracking permission denied');
         set({ 
@@ -162,10 +158,9 @@ export const useStepStore = create<StepState>((set, get) => ({
       }
 
       // Get initial step count
-      const steps = await healthConnectService.getTodaySteps();
+      const steps = await stepCounterService.getTodaySteps();
       
-      // Start periodic sync
-      healthConnectService.startPeriodicSync();
+      stepCounterService.startPeriodicSync();
 
       set({
         isInitialized: true,
@@ -179,7 +174,7 @@ export const useStepStore = create<StepState>((set, get) => ({
       console.error('❌ Step tracking initialization failed:', error);
       
       // Fallback to cached data
-      const cachedSteps = await healthConnectService.getCachedSteps();
+      const cachedSteps = await stepCounterService.getCachedSteps();
       
       set({
         isInitialized: false,
@@ -202,13 +197,13 @@ export const useStepStore = create<StepState>((set, get) => ({
     }
 
     try {
-      const steps = await healthConnectService.getTodaySteps();
+      const steps = await stepCounterService.getTodaySteps();
       set({ todaySteps: steps, error: null });
     } catch (error: any) {
       console.error('❌ Error fetching today steps:', error);
       
       // Fallback to cached data
-      const cachedSteps = await healthConnectService.getCachedSteps();
+      const cachedSteps = await stepCounterService.getCachedSteps();
       set({ 
         todaySteps: cachedSteps,
         error: 'Không thể lấy dữ liệu mới, hiển thị dữ liệu cache',
@@ -230,7 +225,7 @@ export const useStepStore = create<StepState>((set, get) => ({
     try {
       console.log('🔄 Syncing steps with backend...');
       
-      const success = await healthConnectService.syncStepsWithBackend();
+      const success = await stepCounterService.syncStepsWithBackend();
       
       if (success) {
         set({ 

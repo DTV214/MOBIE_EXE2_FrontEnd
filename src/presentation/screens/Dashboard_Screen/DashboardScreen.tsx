@@ -123,6 +123,20 @@ const DashboardScreen = () => {
     checkAvailability();
   }, [user, fetchUserProfile, checkAvailability]);
 
+  useEffect(() => {
+    if (!isEnabled) {
+      return;
+    }
+
+    // Keep step UI updated while user is on the dashboard.
+    fetchTodaySteps();
+    const intervalId = setInterval(() => {
+      fetchTodaySteps();
+    }, 15000);
+
+    return () => clearInterval(intervalId);
+  }, [isEnabled, fetchTodaySteps]);
+
   // Hàm load dữ liệu dashboard
   const loadData = async () => {
     try {

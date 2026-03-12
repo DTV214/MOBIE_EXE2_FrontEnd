@@ -82,8 +82,8 @@ android {
         applicationId "com.lanhcare"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.3"
         // Tối ưu cho nhiều kiến trúc CPU
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
@@ -103,10 +103,7 @@ android {
                 keyAlias MYAPP_RELEASE_KEY_ALIAS
                 keyPassword MYAPP_RELEASE_KEY_PASSWORD
             } else {
-                storeFile file('lanhcare-release-key.keystore')
-                storePassword '123456'
-                keyAlias 'lanhcare'
-                keyPassword '123456'
+                throw new GradleException("Missing release signing config in gradle.properties")
             }
         }
     }
