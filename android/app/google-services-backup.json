@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:572891748659:android:d89d9a32f0ad3fa2670646",
         "android_client_info": {
-          "package_name": "com.healthapp"
+          "package_name": "com.lanhcare"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "572891748659-dnr1ahdisp774etvbmab9p99340frf5e.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.healthapp",
+            "package_name": "com.lanhcare",
             "certificate_hash": "2e66c9cdb09fe283cc9d58cb3f1697b94e21571e"
           }
         },
@@ -25,7 +25,7 @@
           "client_id": "572891748659-pb6q82vf5djekbo80kvklh6ekadub292.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.healthapp",
+            "package_name": "com.lanhcare",
             "certificate_hash": "42e6df030f929ebb0029135726a2f2484d8099e1"
           }
         },

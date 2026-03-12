@@ -7,59 +7,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:572891748659:android:d89d9a32f0ad3fa2670646",
-        "android_client_info": {
-          "package_name": "com.healthapp"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "572891748659-dnr1ahdisp774etvbmab9p99340frf5e.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.healthapp",
-            "certificate_hash": "2e66c9cdb09fe283cc9d58cb3f1697b94e21571e"
-          }
-        },
-        {
-          "client_id": "572891748659-pb6q82vf5djekbo80kvklh6ekadub292.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.healthapp",
-            "certificate_hash": "42e6df030f929ebb0029135726a2f2484d8099e1"
-          }
-        },
-        {
-          "client_id": "572891748659-rv53pls4v9tsp7sdqd7d9t14k0pd32e1.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.healthapp",
-            "certificate_hash": "80a689f4d8acb564882a024529d32eebd49dde36"
-          }
-        },
-        {
-          "client_id": "572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCewnsS5lY7vZKDItpw3o_dzlAQSwtsJl4"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "572891748659-hciej81p3gt3kpf0v589od4vhqjalc9j.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:572891748659:android:225aadf1964ed8f2670646",
         "android_client_info": {
           "package_name": "com.lanhcare"
@@ -72,6 +19,14 @@
           "android_info": {
             "package_name": "com.lanhcare",
             "certificate_hash": "aa8d20eae26a9ca0b84626aafb46afc23588d59f"
+          }
+        },
+        {
+          "client_id": "572891748659-k7sa23sm0hf5d9vt29vsm9d19rmaa6dq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lanhcare",
+            "certificate_hash": "763610ba03bf9bf6a6187f5b41cab96850f0777d"
           }
         },
         {
